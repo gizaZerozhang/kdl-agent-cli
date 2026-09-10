@@ -1,0 +1,10 @@
+/bin/
+/dist/
+.kdl/
+.env
+.env.*
+*.toml.local
+kdl-agent.toml
+credentials.toml
+__pycache__/
+.DS_Store
