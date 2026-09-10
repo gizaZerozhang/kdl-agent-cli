@@ -4,7 +4,9 @@
 
 ## 首次 beta 发布记录
 
-最新发行：`v0.1.0-beta.2`，源码 `b96a7061450d8b4c6899c52442307ac0ba9fdb89`。[候选与五平台验证](https://github.com/gizaZerozhang/kdl-agent-cli/actions/runs/34460103213) 全部通过；[npm Trusted Publishing](https://github.com/gizaZerozhang/kdl-agent-cli/actions/runs/34460767167) 已实际完成 OIDC/provenance 发布。固定 npm 包 SHA256 为 `149e3bf2bcc98a414582baf18b0494a2786f11ecd2f541ffb645f5b999420822`，registry 下载包与 Release 一致。`beta` 指向 beta.2，`latest` 仍为 beta.1；继续使用精确 beta 或 beta 标签。
+beta.3 已发行：源码 `75934e505a6355bbe71b3db998c3026f6f8ff318`，[候选、五平台与 Release](https://github.com/gizaZerozhang/kdl-agent-cli/actions/runs/34465026715)全部通过，自动派发 [npm Trusted Publishing](https://github.com/gizaZerozhang/kdl-agent-cli/actions/runs/34465592589) 成功。包 SHA256：`8618dc172bdf4877da6dbc3aaed7a140e7152747271fa8430964e382837bf63c`，registry integrity 匹配并提供 provenance；beta 指向 beta.3，latest 保留 beta.1。本机隔离环境按原样 npx 完成 beta.2→beta.3 CLI/Skill 同步升级，匿名版本检查通过，无凭证落盘。`npm exec --package=...` 替代写法会干扰嵌套 skills 调用，不属于已验证入口。
+
+beta.2 发行记录：`v0.1.0-beta.2`，源码 `b96a7061450d8b4c6899c52442307ac0ba9fdb89`。[候选与五平台验证](https://github.com/gizaZerozhang/kdl-agent-cli/actions/runs/34460103213) 全部通过；[npm Trusted Publishing](https://github.com/gizaZerozhang/kdl-agent-cli/actions/runs/34460767167) 已实际完成 OIDC/provenance 发布。固定 npm 包 SHA256 为 `149e3bf2bcc98a414582baf18b0494a2786f11ecd2f541ffb645f5b999420822`，registry 下载包与 Release 一致。`beta` 指向 beta.2，`latest` 仍为 beta.1；继续使用精确 beta 或 beta 标签。
 
 以下为 beta.1 首发时的历史记录；后续 OIDC 验证已由上述 beta.2 发行完成。
 
@@ -38,7 +40,7 @@ python3 scripts/release-assets.py collect dist dist/candidate
 npm run release:prepare -- dist/candidate dist/npm
 ```
 
-工具链固定 Go 1.23.6、GoReleaser 2.18.1、Node 22.14+；可信发布使用 npm 11.5.2。`v*` tag 触发 `release.yml`：测试、构建、嵌入 BUILD.json、固定 npm tgz、五平台运行验活，然后经 `github-release` 环境审批校验并公开 Release，自动派发同 tag 的 npm 工作流。当前仅开放 beta；稳定版签名及业务门尚未接入。自动串联改动待下一新版本远端验证。
+工具链固定 Go 1.23.6、GoReleaser 2.18.1、Node 22.14+；可信发布使用 npm 11.5.2。`v*` tag 触发 `release.yml`：测试、构建、嵌入 BUILD.json、固定 npm tgz、五平台运行验活，然后经 `github-release` 环境审批校验并公开 Release，自动派发同 tag 的 npm 工作流。当前仅开放 beta；稳定版签名及业务门尚未接入。beta.3 已完成自动串联与 OIDC 发行验证。
 
 审批前检查 npm 候选 pack-report.json 的允许文件范围、各平台运行结果。工作流自动运行 `verify-release.cjs`，重试时核验已有 Release 附件，不覆盖候选；npm 发布失败时重试 `publish-npm.yml` 并指定同一 tag。
 
