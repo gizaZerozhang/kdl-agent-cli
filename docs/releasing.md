@@ -2,6 +2,16 @@
 
 当前个人 npm 包为 `@zerozhang-giza/kdl-agent`。个人账号阶段结束后，统一更新 package.json 中的 npm 身份、repository 和 Skill 来源，保留历史版本并验证旧包迁移。
 
+## 首次 beta 发布记录
+
+2026-09-10 已公开 [v0.1.0-beta.1](https://github.com/gizaZerozhang/kdl-agent-cli/releases/tag/v0.1.0-beta.1) 与 [npm 0.1.0-beta.1](https://www.npmjs.com/package/@zerozhang-giza/kdl-agent/v/0.1.0-beta.1)，源码 commit 为 `a50bc08164a9ab11a8f9d8b5435eb3553fcdeed8`。发布包 SHA256 为 `eac0576e2ef9c1cdc2c76d95f48152a82e8a8b28aea2364b992509c9ddafc9f6`，registry 下载包与 Release 固定候选一致。公开 tag 和附件不可覆盖。
+
+[发行 CI](https://github.com/gizaZerozhang/kdl-agent-cli/actions/runs/34433571096) 的候选、五平台安装和 Draft 共 7 项通过；21 项 npm 回归、Go test/vet、匿名 npx 精确版本与 beta 向导、Codex Skill 实装、同版本跳过、跨目录执行、卸载保留配置/Skill、禁用生命周期脚本后首次运行补装通过。最低系统、Windows ACL 和真实业务仍待专项验收。
+
+首次发布由账号启用 2FA 后手工完成，不含 OIDC provenance。Trusted Publisher 已绑定下述仓库、工作流和环境，服务端回读权限为 publish 与 staged publish；实际 OIDC 发布待下一个需要发行的版本验证，不重复发布现有版本。
+
+首次指定 `--tag beta` 后，registry 同时添加了 `latest`；完成认证后的官方 `npm dist-tag rm` 返回 HTTP 400，回读确认未删除。npm CLI [同类报告 #8490](https://github.com/npm/cli/issues/8490)记录了相同行为。当前文档只提供精确 beta 或 `@beta` 入口，latest 不作为稳定就绪证据；待稳定版本验收后再移动该标签，不虚构版本或撤销现有发布。
+
 ## 维护者检查
 
 ```bash
@@ -28,7 +38,7 @@ npm run release:prepare -- dist/candidate dist/npm
 
 发布前检查 npm 候选 pack-report.json 的允许文件范围、各平台运行结果，并下载 Draft 附件运行 `node scripts/verify-release.cjs <下载目录>`。公开同一批附件后，重新匿名验证下载，再发布候选 tgz 到 npm。首次建包通过本人 `npm login`/验证完成：`npm publish <候选 tgz> --access public --tag beta`，首次手工发布不声明 OIDC provenance。
 
-后续在 npm 配置 Trusted Publisher：GitHub owner `gizaZerozhang`、repository `kdl-agent-cli`、workflow `publish-npm.yml`、environment `npm-production`。配置并验证后，运行该工作流并指定已公开的 beta tag，通过 OIDC/provenance 发布同一候选。未完成 npm 端绑定前，工作流不能视为可用的发布身份。
+npm Trusted Publisher 已配置：GitHub owner `gizaZerozhang`、repository `kdl-agent-cli`、workflow `publish-npm.yml`、environment `npm-production`。下一次有新版本需要发布时，运行该工作流并指定已公开的 beta tag，通过 OIDC/provenance 发布同一候选，并核验 registry 证明；配置成功不等于实际发布已验证。
 
 ## 稳定版门
 

@@ -2,7 +2,12 @@
 
 ## 未发布
 
-- npm 按平台下载安装器、SHA256 与版本校验、同版本 Skill 安装向导；首个候选版本 `0.1.0-beta.1`。
+- 更新已公开的 beta 安装入口、发行证据、Trusted Publisher 配置与 latest 标签限制说明。
+
+## 0.1.0-beta.1 - 2026-09-10
+
+- GitHub Release 与 npm 已公开；五平台安装烟测、匿名 npm 精确版本/beta 向导与 Codex Skill 实装通过。
+- npm 按平台下载安装器、SHA256 与版本校验、同版本 Skill 安装向导。
 - 个人 npm 包 `@zerozhang-giza/kdl-agent`，终端命令保持 `kdl-agent`；升级、回退及卸载保留 `.kdl`。
 - GoReleaser 候选、来源绑定检查、公开安装/API/Skill 文档与安装器回归。
 - npm 打包允许清单同时验证文件缺失和意外夹带，包含同版本更新记录。
