@@ -1,0 +1,42 @@
+name: Publish npm Candidate
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 已公开并验证的 Release tag
+        required: true
+        type: string
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: npm-${{ inputs.tag }}
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-22.04
+    environment: npm-production
+    steps:
+      - name: 检查预发行 tag
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: node -e 'if(!/^v\d+\.\d+\.\d+-beta\.\d+$/.test(process.env.RELEASE_TAG)) throw Error("稳定发行尚未开放")'
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.14.0'
+          registry-url: https://registry.npmjs.org
+      - run: npm install -g npm@11.5.2
+      - run: npm ci --ignore-scripts
+      - name: 下载公开的固定候选
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = false
+          gh release download "$RELEASE_TAG" --dir dist/public-release
+      - run: node scripts/verify-release.cjs dist/public-release
+      - name: 通过 npm Trusted Publishing 发布
+        run: npm publish dist/public-release/npm-package.tgz --access public --tag beta --provenance
