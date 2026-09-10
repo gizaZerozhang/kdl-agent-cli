@@ -1,0 +1,2086 @@
+openapi: 3.1.0
+info:
+  title: KDL Agent Gateway
+  version: 1.0.0-m0.3
+  description: '快代理 Agent Gateway API，服务地址 https://agent-gateway.kdlapi.com。本规范描述
+    Gateway 接口，不是原有订单 OpenAPI 的完整接口列表。
+
+    使用 Agent Bearer 凭证访问 12 项 Capability；三项敏感 grant 默认关闭。
+
+    订单 Secret 通过 POST 读取并返回 Cache-Control: no-store，不使用 Idempotency-Key。
+
+    创建待付款订单与工单使用 Idempotency-Key，付款由用户在官网完成。'
+security:
+- bearerAuth: []
+x-kdl-authorization:
+  scope_enforced: false
+  order_scope_enforced: false
+  description: 第一版 Capability 仅用于契约、审计和限速；订单型请求仍须校验租户与订单归属
+tags:
+- name: account
+  description: 账户资金与摘要查询
+- name: messages
+  description: 站内信安全投影查询
+- name: orders
+  description: 订单、使用摘要与接入指引查询
+- name: products
+  description: 产品目录、规格、试用资格、报价与待付款订单创建
+- name: support
+  description: 工单预览与真实工单创建
+- name: secret
+  description: 订单 Secret 直读（须 order.secret.read grant）
+paths:
+  /v1/account/funds:
+    get:
+      operationId: getAccountFunds
+      summary: 查询账户资金
+      tags:
+      - account
+      x-kdl-capability: account.funds.read
+      responses:
+        '200':
+          $ref: '#/components/responses/AccountFundsSuccess'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /v1/account/summary:
+    get:
+      operationId: getAccountSummary
+      summary: 查询账户摘要
+      tags:
+      - account
+      x-kdl-capability: account.summary.read
+      responses:
+        '200':
+          $ref: '#/components/responses/AccountSummarySuccess'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /v1/messages:
+    get:
+      operationId: listMessages
+      summary: 查询站内信列表
+      tags:
+      - messages
+      x-kdl-capability: account.notifications.read
+      parameters:
+      - $ref: '#/components/parameters/Cursor'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          $ref: '#/components/responses/MessageListSuccess'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /v1/messages/{message_id}:
+    get:
+      operationId: getMessage
+      summary: 查询站内信详情
+      tags:
+      - messages
+      x-kdl-capability: account.notifications.read
+      parameters:
+      - $ref: '#/components/parameters/MessageId'
+      responses:
+        '200':
+          $ref: '#/components/responses/MessageDetailSuccess'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /v1/orders:
+    get:
+      operationId: listOrders
+      summary: 查询代理订单列表
+      tags:
+      - orders
+      description: 查询已具备代理服务信息的订单，包含 API 域名、规格与额度。待付款订单不在本列表中，创建后使用返回的官网付款链接查看。
+      x-kdl-capability: order.read
+      parameters:
+      - $ref: '#/components/parameters/Cursor'
+      - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/OrderStatus'
+      responses:
+        '200':
+          $ref: '#/components/responses/OrderListSuccess'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /v1/orders/{order_id}:
+    get:
+      operationId: getOrder
+      summary: 查询订单详情
+      tags:
+      - orders
+      x-kdl-capability: order.read
+      parameters:
+      - $ref: '#/components/parameters/OrderId'
+      responses:
+        '200':
+          $ref: '#/components/responses/OrderDetailSuccess'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /v1/orders/{order_id}/stats:
+    get:
+      operationId: getOrderStats
+      summary: 查询订单最近 24 小时用量摘要
+      tags:
+      - orders
+      x-kdl-capability: order.usage.summary.read
+      parameters:
+      - $ref: '#/components/parameters/OrderId'
+      responses:
+        '200':
+          $ref: '#/components/responses/OrderStatsSuccess'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '501':
+          $ref: '#/components/responses/Unsupported'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /v1/orders/{order_id}/guide:
+    get:
+      operationId: getOrderGuide
+      summary: 查询订单接入指引
+      tags:
+      - orders
+      x-kdl-capability: order.access.guide.read
+      parameters:
+      - $ref: '#/components/parameters/OrderId'
+      responses:
+        '200':
+          $ref: '#/components/responses/OrderGuideSuccess'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /v1/orders/{order_id}/secret:
+    post:
+      operationId: createOrderSecret
+      summary: 按订单读取 Secret 明文（TLS）
+      description: '校验 Bearer、`order.secret.read` grant 与订单归属；跨账户或不存在订单统一返回 404。
+
+        响应须带 `Cache-Control: no-store`；不使用 `Idempotency-Key`；每 credential 限速 1 req/s。
+
+        Gateway 不代调订单 OpenAPI；客户端取得 Secret 后直连 `api_domain`。
+
+        '
+      tags:
+      - secret
+      x-kdl-capability: order.secret.read
+      x-kdl-response-cache-control: no-store
+      parameters:
+      - $ref: '#/components/parameters/OrderId'
+      responses:
+        '200':
+          $ref: '#/components/responses/OrderSecretReadSuccess'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /v1/products:
+    get:
+      operationId: listProducts
+      summary: 查询产品目录
+      tags:
+      - products
+      x-kdl-capability: product.discovery.read
+      responses:
+        '200':
+          $ref: '#/components/responses/ProductListSuccess'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /v1/products/trial-eligibility:
+    get:
+      operationId: getProductTrialEligibility
+      summary: 查询当前账户的产品试用资格
+      tags:
+      - products
+      x-kdl-capability: product.discovery.read
+      responses:
+        '200':
+          $ref: '#/components/responses/TrialEligibilitySuccess'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /v1/products/{product_type}/spec:
+    get:
+      operationId: getProductSpec
+      summary: 查询产品动态规格
+      tags:
+      - products
+      x-kdl-capability: product.purchase.read
+      parameters:
+      - $ref: '#/components/parameters/ProductType'
+      responses:
+        '200':
+          $ref: '#/components/responses/ProductSpecSuccess'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /v1/products/quote:
+    post:
+      operationId: quoteProduct
+      summary: 按当前产品配置生成权威报价
+      tags:
+      - products
+      x-kdl-capability: product.purchase.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductQuoteRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/ProductQuoteSuccess'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /v1/products/purchases:
+    post:
+      operationId: createProductPurchase
+      summary: 创建新购待付款订单
+      tags:
+      - products
+      x-kdl-capability: product.purchase.create
+      x-kdl-grant-required: product.purchase.create
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductPurchaseRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/ProductPurchaseSuccess'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/IdempotencyConflict'
+        '422':
+          $ref: '#/components/responses/QuoteExpired'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /v1/tickets:
+    post:
+      operationId: createSupportTicket
+      summary: 创建真实工单
+      tags:
+      - support
+      x-kdl-capability: support.ticket.create
+      x-kdl-grant-required: support.ticket.create
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupportTicketCreateRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/SupportTicketCreateSuccess'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/BusinessRuleViolation'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /v1/tickets/preview:
+    post:
+      operationId: previewSupportTicket
+      summary: 预览工单正文
+      tags:
+      - support
+      x-kdl-capability: support.ticket.preview
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TicketPreviewRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/TicketPreviewSuccess'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+components:
+  headers:
+    RetryAfter:
+      description: 客户端至少等待的秒数
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+  parameters:
+    Cursor:
+      name: cursor
+      in: query
+      required: false
+      schema:
+        type: string
+        minLength: 1
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: pair、envelope、写 Capability 与 execution journal 的幂等键；UUID v4
+      schema:
+        type: string
+        format: uuid
+        pattern: ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    MessageId:
+      name: message_id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: ^[1-9][0-9]*$
+    OrderId:
+      name: order_id
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+    OrderStatus:
+      name: status
+      in: query
+      required: false
+      description: '按代理订单业务状态筛选（active、closed、expired、cancelled）。
+
+        不含待付款单；待付款请使用 product.purchase.create 返回的 payment_url。
+
+        '
+      schema:
+        type: string
+        enum:
+        - active
+        - closed
+        - expired
+        - cancelled
+    ProductType:
+      name: product_type
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+  responses:
+    AccountFundsSuccess:
+      description: 账户资金
+      content:
+        application/json:
+          schema:
+            allOf:
+            - $ref: '#/components/schemas/SuccessEnvelope'
+            - type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/AccountFunds'
+    AccountSummarySuccess:
+      description: 账户摘要
+      content:
+        application/json:
+          schema:
+            allOf:
+            - $ref: '#/components/schemas/SuccessEnvelope'
+            - type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/AccountSummary'
+    BusinessRuleViolation:
+      description: 待回复工单上限、提交互斥或其他业务规则冲突
+      x-kdl-error-codes:
+      - BUSINESS_RULE_VIOLATION
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    Forbidden:
+      description: 当前凭证未获所需 grant；跨账户资源与不存在资源统一返回 404
+      x-kdl-error-codes:
+      - FORBIDDEN
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    IdempotencyConflict:
+      description: 同一 Idempotency-Key 用于不同业务指纹
+      x-kdl-error-codes:
+      - IDEMPOTENCY_CONFLICT
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    MessageDetailSuccess:
+      description: 站内信详情；读取不修改 `is_read`
+      content:
+        application/json:
+          schema:
+            allOf:
+            - $ref: '#/components/schemas/SuccessEnvelope'
+            - type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/MessageDetail'
+    MessageListSuccess:
+      description: 站内信列表
+      content:
+        application/json:
+          schema:
+            allOf:
+            - $ref: '#/components/schemas/SuccessEnvelope'
+            - type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/MessageList'
+    NotFound:
+      description: 资源或设备不存在，或不属于当前账户；未知设备和跨账户设备统一返回 404 NOT_FOUND
+      x-kdl-error-codes:
+      - NOT_FOUND
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    OrderDetailSuccess:
+      description: 订单详情
+      content:
+        application/json:
+          schema:
+            allOf:
+            - $ref: '#/components/schemas/SuccessEnvelope'
+            - type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/OrderDetail'
+    OrderGuideSuccess:
+      description: 不含真实 Secret 的接入指引
+      content:
+        application/json:
+          schema:
+            allOf:
+            - $ref: '#/components/schemas/SuccessEnvelope'
+            - type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/OrderGuide'
+    OrderListSuccess:
+      description: 订单列表
+      content:
+        application/json:
+          schema:
+            allOf:
+            - $ref: '#/components/schemas/SuccessEnvelope'
+            - type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/OrderList'
+    OrderSecretReadSuccess:
+      description: 订单 Secret 明文；响应须 no-store，禁止缓存
+      headers:
+        Cache-Control:
+          schema:
+            type: string
+            const: no-store
+      content:
+        application/json:
+          schema:
+            allOf:
+            - $ref: '#/components/schemas/SuccessEnvelope'
+            - type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/OrderSecretRead'
+    OrderStatsSuccess:
+      description: 订单最近 24 小时用量摘要
+      content:
+        application/json:
+          schema:
+            allOf:
+            - $ref: '#/components/schemas/SuccessEnvelope'
+            - type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/OrderStats'
+    ProductListSuccess:
+      description: 产品目录
+      content:
+        application/json:
+          schema:
+            allOf:
+            - $ref: '#/components/schemas/SuccessEnvelope'
+            - type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/ProductList'
+    ProductPurchaseSuccess:
+      description: 新购待付款订单创建成功；不自动支付
+      content:
+        application/json:
+          schema:
+            allOf:
+            - $ref: '#/components/schemas/SuccessEnvelope'
+            - type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/ProductPurchaseResult'
+    ProductQuoteSuccess:
+      description: 当前账户可用的权威报价
+      content:
+        application/json:
+          schema:
+            allOf:
+            - $ref: '#/components/schemas/SuccessEnvelope'
+            - type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/ProductQuote'
+    ProductSpecSuccess:
+      description: 产品专属配置项、限制与配置版本
+      content:
+        application/json:
+          schema:
+            allOf:
+            - $ref: '#/components/schemas/SuccessEnvelope'
+            - type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/ProductSpec'
+    QuoteExpired:
+      description: 报价已过期或配置与有效 quote 不一致
+      x-kdl-error-codes:
+      - QUOTE_EXPIRED
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    RateLimited:
+      description: 凭证级、账户级或 Capability 限速
+      x-kdl-error-codes:
+      - RATE_LIMITED
+      headers:
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    ServiceUnavailable:
+      description: 服务必需依赖不可用，请稍后重试
+      x-kdl-error-codes:
+      - SERVICE_UNAVAILABLE
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    SupportTicketCreateSuccess:
+      description: 真实工单创建成功；响应不含工单正文
+      content:
+        application/json:
+          schema:
+            allOf:
+            - $ref: '#/components/schemas/SuccessEnvelope'
+            - type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/SupportTicketCreateResult'
+    TicketPreviewSuccess:
+      description: 工单正文预览；不落库
+      content:
+        application/json:
+          schema:
+            allOf:
+            - $ref: '#/components/schemas/SuccessEnvelope'
+            - type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/TicketPreview'
+    TrialEligibilitySuccess:
+      description: 当前账户的试用资格
+      content:
+        application/json:
+          schema:
+            allOf:
+            - $ref: '#/components/schemas/SuccessEnvelope'
+            - type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/TrialEligibilityList'
+    Unauthorized:
+      description: Agent 凭证缺失、无效、停用或已吊销
+      x-kdl-error-codes:
+      - AUTH_REQUIRED
+      - CREDENTIAL_REVOKED
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    Unsupported:
+      description: 当前产品或订单不支持该摘要
+      x-kdl-error-codes:
+      - UNSUPPORTED
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    UpstreamError:
+      description: 上游服务返回异常或无效响应
+      x-kdl-error-codes:
+      - UPSTREAM_ERROR
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    ValidationError:
+      description: 请求字段或产品配置无效
+      x-kdl-error-codes:
+      - VALIDATION_ERROR
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+  schemas:
+    AccountFunds:
+      type: object
+      required:
+      - cash_balance
+      - invoiceable_amount
+      - currency
+      properties:
+        cash_balance:
+          $ref: '#/components/schemas/DecimalAmount'
+        invoiceable_amount:
+          $ref: '#/components/schemas/DecimalAmount'
+        currency:
+          type: string
+          const: CNY
+        as_of:
+          type: string
+          format: date-time
+      additionalProperties: false
+    AccountOrderCounts:
+      type: object
+      required:
+      - total_orders
+      - renewal_due_orders
+      - trial_eligible_products
+      - trial_eligible_specs
+      properties:
+        total_orders:
+          type: integer
+          minimum: 0
+        renewal_due_orders:
+          type: integer
+          minimum: 0
+        trial_eligible_products:
+          type: integer
+          minimum: 0
+        trial_eligible_specs:
+          type: integer
+          minimum: 0
+      additionalProperties: false
+    AccountRestriction:
+      type: object
+      required:
+      - reason_code
+      - reason
+      - scope
+      - affected_product_types
+      - next_action
+      properties:
+        reason_code:
+          type: string
+          pattern: ^[A-Z][A-Z0-9_]*$
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+        scope:
+          type: string
+          enum:
+          - all_services
+          - product_types
+        affected_product_types:
+          type: array
+          maxItems: 32
+          items:
+            type: string
+            pattern: ^[a-z][a-z0-9_-]{0,63}$
+        next_action:
+          anyOf:
+          - $ref: '#/components/schemas/NextAction'
+          - type: 'null'
+      additionalProperties: false
+      x-kdl-invariants:
+      - scope=all_services requires affected_product_types=[]
+      - scope=product_types requires affected_product_types non-empty
+    AccountSummary:
+      type: object
+      required:
+      - realname_status
+      - restrictions
+      - order_counts
+      properties:
+        realname_status:
+          type: string
+          enum:
+          - unverified
+          - pending
+          - verified
+          - rejected
+          - additional_verification_required
+        restrictions:
+          type: array
+          maxItems: 32
+          items:
+            $ref: '#/components/schemas/AccountRestriction'
+        order_counts:
+          $ref: '#/components/schemas/AccountOrderCounts'
+        risk_notice:
+          type:
+          - string
+          - 'null'
+        order_risk_summary:
+          type:
+          - object
+          - 'null'
+          description: 仅允许风险分类到受影响订单数的非负整数映射，不返回原始风控内容
+          maxProperties: 32
+          additionalProperties:
+            type: integer
+            minimum: 0
+      additionalProperties: false
+    ApiDomain:
+      type: string
+      format: uri
+      pattern: ^https://[^\s]+$
+      description: 订单公开 API 根地址，仅支持 HTTPS/443/根路径。客户端须校验证书链和 hostname，不自动跟随重定向。
+      x-kdl-endpoint-policy:
+        scheme: https
+        userinfo: forbidden
+        port: omitted-or-443
+        path: root-only
+        query: forbidden
+        fragment: forbidden
+        host: canonical-lowercase
+        redirects: forbidden
+    BreakdownItem:
+      type: object
+      required:
+      - category
+      - count
+      - ratio
+      - hint
+      properties:
+        category:
+          type: string
+        count:
+          type: integer
+          minimum: 0
+        ratio:
+          type: number
+          minimum: 0
+          maximum: 1
+        hint:
+          type: string
+      additionalProperties: false
+    ConfigurationCondition:
+      type: object
+      required:
+      - field
+      - operator
+      - value
+      properties:
+        field:
+          type: string
+          pattern: ^[a-z][a-z0-9_]{0,63}$
+        operator:
+          type: string
+          enum:
+          - equals
+          - not_equals
+        value:
+          $ref: '#/components/schemas/ConfigurationValue'
+      additionalProperties: false
+    ConfigurationField:
+      type: object
+      required:
+      - name
+      - label
+      - value_type
+      - required
+      - category
+      properties:
+        name:
+          type: string
+          pattern: ^(?!.*(?:secret|password|passwd|token|credential|private_key|api_key))[a-z][a-z0-9_]{0,63}$
+        label:
+          type: string
+        value_type:
+          type: string
+          enum:
+          - string
+          - integer
+          - number
+          - boolean
+        required:
+          type: boolean
+        category:
+          type: string
+          enum:
+          - pricing
+          - availability
+          - capability
+          - transaction
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConfigurationOption'
+        description:
+          type: string
+      additionalProperties: false
+    ConfigurationOption:
+      type: object
+      required:
+      - value
+      - label
+      properties:
+        value:
+          $ref: '#/components/schemas/ConfigurationValue'
+        label:
+          type: string
+      additionalProperties: false
+    ConfigurationRule:
+      type: object
+      required:
+      - when
+      - then
+      properties:
+        when:
+          $ref: '#/components/schemas/ConfigurationCondition'
+        then:
+          $ref: '#/components/schemas/ConfigurationRuleEffect'
+      additionalProperties: false
+    ConfigurationRuleEffect:
+      oneOf:
+      - type: object
+        required:
+        - action
+        - fields
+        properties:
+          action:
+            type: string
+            const: require_fields
+          fields:
+            type: array
+            minItems: 1
+            maxItems: 32
+            items:
+              type: string
+              pattern: ^[a-z][a-z0-9_]{0,63}$
+        additionalProperties: false
+      - type: object
+        required:
+        - action
+        - fields
+        properties:
+          action:
+            type: string
+            const: forbid_fields
+          fields:
+            type: array
+            minItems: 1
+            maxItems: 32
+            items:
+              type: string
+              pattern: ^[a-z][a-z0-9_]{0,63}$
+        additionalProperties: false
+      - type: object
+        required:
+        - action
+        - field
+        - values
+        properties:
+          action:
+            type: string
+            const: allowed_values
+          field:
+            type: string
+            pattern: ^[a-z][a-z0-9_]{0,63}$
+          values:
+            type: array
+            minItems: 1
+            maxItems: 64
+            items:
+              $ref: '#/components/schemas/ConfigurationValue'
+        additionalProperties: false
+      - type: object
+        required:
+        - action
+        - field
+        - value
+        properties:
+          action:
+            type: string
+            enum:
+            - minimum
+            - maximum
+          field:
+            type: string
+            pattern: ^[a-z][a-z0-9_]{0,63}$
+          value:
+            type: number
+        additionalProperties: false
+    ConfigurationValue:
+      description: 产品配置只允许有限标量；禁止对象、数组和 null
+      anyOf:
+      - type: string
+        maxLength: 256
+      - type: integer
+      - type: number
+      - type: boolean
+    DecimalAmount:
+      type: string
+      pattern: ^[0-9]+(\.[0-9]{2})$
+    DocumentationUrl:
+      type: string
+      format: uri
+      pattern: ^https://www\.kuaidaili\.com/doc/
+      x-kdl-official-url-policy:
+        exact_host: www.kuaidaili.com
+        allowed_path_prefixes:
+        - /doc/
+        query: forbidden
+        fragment: allowed
+        redirects: revalidate-same-policy
+    ErrorDetail:
+      type: object
+      required:
+      - code
+      - message
+      properties:
+        code:
+          type: string
+          enum:
+          - AUTH_REQUIRED
+          - CREDENTIAL_REVOKED
+          - FORBIDDEN
+          - NOT_FOUND
+          - IDEMPOTENCY_CONFLICT
+          - RATE_LIMITED
+          - VALIDATION_ERROR
+          - UPSTREAM_ERROR
+          - SERVICE_UNAVAILABLE
+          - UNSUPPORTED
+          - QUOTE_EXPIRED
+          - BUSINESS_RULE_VIOLATION
+        message:
+          type: string
+          minLength: 1
+        details:
+          $ref: '#/components/schemas/ErrorSafeDetails'
+        next_action:
+          $ref: '#/components/schemas/NextAction'
+      additionalProperties: false
+    ErrorEnvelope:
+      type: object
+      required:
+      - success
+      - error
+      - request_id
+      properties:
+        success:
+          type: boolean
+          const: false
+        error:
+          $ref: '#/components/schemas/ErrorDetail'
+        request_id:
+          type: string
+          pattern: ^req_
+      additionalProperties: false
+    ErrorSafeDetails:
+      type: object
+      description: 仅允许稳定、非敏感的结构化诊断；禁止原始上游响应、请求正文、凭证或堆栈
+      minProperties: 1
+      maxProperties: 3
+      properties:
+        field:
+          type: string
+          pattern: ^[A-Za-z0-9_.\[\]-]+$
+        reason_code:
+          type: string
+          pattern: ^[A-Z][A-Z0-9_]*$
+        retryable:
+          type: boolean
+      additionalProperties: false
+    MemberCenterMessageUrl:
+      type: string
+      format: uri
+      pattern: ^https://www\.kuaidaili\.com/uc/notify/message/detail/[1-9][0-9]*/$
+      x-kdl-official-url-policy:
+        exact_host: www.kuaidaili.com
+        path_regex: ^/uc/notify/message/detail/[1-9][0-9]*/$
+        query: forbidden
+        fragment: forbidden
+        redirects: revalidate-same-policy
+    MemberCenterOrderDetailUrl:
+      type: string
+      format: uri
+      pattern: ^https://www\.kuaidaili\.com/uc/order/detail/\?orderid=[1-9][0-9]*$
+      x-kdl-official-url-policy:
+        exact_host: www.kuaidaili.com
+        path_regex: ^/uc/order/detail/$
+        allowed_query_keys:
+        - orderid
+        required_query_keys:
+        - orderid
+        query_value_patterns:
+          orderid: ^[1-9][0-9]*$
+        fragment: forbidden
+        redirects: revalidate-same-policy
+    MemberCenterPaymentUrl:
+      type: string
+      format: uri
+      pattern: ^https://www\.kuaidaili\.com/uc/order/pay/\?orderid=[1-9][0-9]*$
+      x-kdl-official-url-policy:
+        exact_host: www.kuaidaili.com
+        path_regex: ^/uc/order/pay/$
+        allowed_query_keys:
+        - orderid
+        required_query_keys:
+        - orderid
+        query_value_patterns:
+          orderid: ^[1-9][0-9]*$
+        fragment: forbidden
+        redirects: revalidate-same-policy
+    MemberCenterStatsUrl:
+      type: string
+      format: uri
+      pattern: ^https://www\.kuaidaili\.com/uc/[A-Za-z0-9_-]+/req-stat/\?[^\s]+$
+      x-kdl-official-url-policy:
+        exact_host: www.kuaidaili.com
+        path_regex: ^/uc/(dps|tps|tps_pro|kps|kps-lrps|fps|sfps)/req-stat/$
+        allowed_query_keys:
+        - orderid
+        - source
+        required_query_keys:
+        - orderid
+        query_value_patterns:
+          orderid: ^[1-9][0-9]*$
+          source: ^stu$
+        fragment: forbidden
+        redirects: revalidate-same-policy
+    MemberCenterTicketUrl:
+      type: string
+      format: uri
+      pattern: ^https://www\.kuaidaili\.com/uc/support/question/detail/[1-9][0-9]*/$
+      x-kdl-official-url-policy:
+        exact_host: www.kuaidaili.com
+        path_regex: ^/uc/support/question/detail/[1-9][0-9]*/$
+        query: forbidden
+        fragment: forbidden
+        redirects: revalidate-same-policy
+    MessageDetail:
+      type: object
+      description: 第一版仅返回元数据与会员中心 URL，不返回正文或正文摘要
+      required:
+      - id
+      - title
+      - member_center_url
+      - created_at
+      - is_read
+      properties:
+        id:
+          type: string
+          pattern: ^[1-9][0-9]*$
+        title:
+          type: string
+        member_center_url:
+          $ref: '#/components/schemas/MemberCenterMessageUrl'
+        created_at:
+          type: string
+          format: date-time
+        is_read:
+          type: boolean
+      additionalProperties: false
+    MessageList:
+      type: object
+      required:
+      - items
+      - next_cursor
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MessageSummary'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+      additionalProperties: false
+    MessageSummary:
+      type: object
+      description: 第一版仅返回元数据与会员中心 URL，不返回正文或正文摘要
+      required:
+      - id
+      - title
+      - member_center_url
+      - created_at
+      properties:
+        id:
+          type: string
+          pattern: ^[1-9][0-9]*$
+        title:
+          type: string
+        member_center_url:
+          $ref: '#/components/schemas/MemberCenterMessageUrl'
+        created_at:
+          type: string
+          format: date-time
+      additionalProperties: false
+    NextAction:
+      type: object
+      required:
+      - type
+      - label
+      - url
+      properties:
+        type:
+          type: string
+          const: url
+        label:
+          type: string
+          minLength: 1
+        url:
+          $ref: '#/components/schemas/OfficialActionUrl'
+      additionalProperties: false
+    OfficialActionUrl:
+      type: string
+      format: uri
+      pattern: ^https://www\.kuaidaili\.com/
+      x-kdl-official-url-policy:
+        exact_host: www.kuaidaili.com
+        allowed_path_prefixes:
+        - /uc/
+        - /doc/
+        - /cart2/
+        - /freetest/
+        allowed_query_keys:
+        - status
+        - orderid
+        - t
+        - source
+        required_query_keys: []
+        query_value_patterns:
+          status: ^[A-Za-z0-9_-]+$
+          orderid: ^[1-9][0-9]*$
+          t: ^[A-Za-z0-9_-]+$
+          source: ^stu$
+        fragment: allowed
+        redirects: revalidate-same-policy
+    OrderDetail:
+      type: object
+      required:
+      - order_id
+      - product_type
+      - status
+      - api_domain
+      - specification
+      - quota_items
+      properties:
+        order_id:
+          type: string
+        product_type:
+          type: string
+        status:
+          type: string
+        api_domain:
+          $ref: '#/components/schemas/ApiDomain'
+        expires_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        auto_renew:
+          type: boolean
+        specification:
+          type: array
+          maxItems: 64
+          description: 当前订单的产品规格白名单投影；字段集由 product_type 决定
+          items:
+            $ref: '#/components/schemas/OrderSpecificationItem'
+        quota_items:
+          type: array
+          maxItems: 32
+          description: 保留产品语义、单位与重置周期的额度/用量投影
+          items:
+            $ref: '#/components/schemas/OrderQuotaItem'
+      additionalProperties: false
+    OrderGuide:
+      type: object
+      required:
+      - order_id
+      - documentation_url
+      - auth_method
+      - config_template
+      properties:
+        order_id:
+          type: string
+        documentation_url:
+          $ref: '#/components/schemas/DocumentationUrl'
+        auth_method:
+          type: string
+        config_template:
+          $ref: '#/components/schemas/OrderGuideConfigTemplate'
+        next_actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/NextAction'
+      additionalProperties: false
+    OrderGuideConfigTemplate:
+      type: object
+      description: 固定占位符模板；不得替换为真实 Secret 或代理密码
+      required:
+      - secret_id
+      - secret_key
+      properties:
+        secret_id:
+          type: string
+          const: ${KDL_ORDER_SECRET_ID}
+        secret_key:
+          type: string
+          const: ${KDL_ORDER_SECRET_KEY}
+      additionalProperties: false
+    OrderList:
+      type: object
+      required:
+      - items
+      - next_cursor
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderSummary'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+      additionalProperties: false
+    OrderQuotaItem:
+      type: object
+      required:
+      - metric
+      - label
+      - unit
+      - total
+      - used
+      - remaining
+      - reset_period
+      properties:
+        metric:
+          type: string
+          pattern: ^[a-z][a-z0-9_]{0,63}$
+          x-kdl-key-source: server-allowlist-by-product_type
+        label:
+          type: string
+          minLength: 1
+          maxLength: 100
+        unit:
+          type: string
+          enum:
+          - ip
+          - request
+          - byte
+          - connection
+          - second
+        total:
+          type: number
+          minimum: 0
+        used:
+          type: number
+          minimum: 0
+        remaining:
+          type: number
+          minimum: 0
+        reset_period:
+          type: string
+          enum:
+          - none
+          - daily
+          - monthly
+          - billing_cycle
+      additionalProperties: false
+      x-kdl-invariants:
+      - used <= total
+      - remaining <= total
+    OrderSecretRead:
+      type: object
+      required:
+      - order_id
+      - secret_id
+      - secret_key
+      - api_domain
+      properties:
+        order_id:
+          type: string
+        secret_id:
+          type: string
+        secret_key:
+          type: string
+          description: 订单 Secret 明文；仅经 TLS 传输，禁止进入日志/审计/APM
+        api_domain:
+          $ref: '#/components/schemas/ApiDomain'
+      additionalProperties: false
+    OrderSpecificationItem:
+      type: object
+      required:
+      - name
+      - label
+      - value
+      - unit
+      properties:
+        name:
+          type: string
+          pattern: ^(?!.*(?:secret|password|passwd|token|credential|private_key|api_key))[a-z][a-z0-9_]{0,63}$
+          x-kdl-key-source: server-allowlist-by-product_type
+        label:
+          type: string
+          minLength: 1
+          maxLength: 100
+        value:
+          $ref: '#/components/schemas/OrderSpecificationValue'
+        unit:
+          type:
+          - string
+          - 'null'
+          enum:
+          - ip
+          - request
+          - byte
+          - connection
+          - second
+          - minute
+          - hour
+          - day
+          - month
+          - null
+      additionalProperties: false
+    OrderSpecificationValue:
+      description: 订单规格只允许有限标量；禁止对象、数组和 null
+      anyOf:
+      - type: string
+        maxLength: 256
+      - type: integer
+      - type: number
+      - type: boolean
+    OrderStats:
+      type: object
+      required:
+      - order_id
+      - period_start
+      - period_end
+      - generated_at
+      - product_type
+      - error_breakdown
+      - risk_breakdown
+      - member_center_stats_url
+      properties:
+        order_id:
+          type: string
+        period_start:
+          type: string
+          format: date-time
+        period_end:
+          type: string
+          format: date-time
+        generated_at:
+          type: string
+          format: date-time
+        product_type:
+          type: string
+          enum:
+          - dps
+          - tps
+          - tps_pro
+          - kps
+          - kps-lrps
+          - fps
+          - sfps
+        error_breakdown:
+          type: array
+          items:
+            $ref: '#/components/schemas/BreakdownItem'
+        risk_breakdown:
+          type: array
+          items:
+            $ref: '#/components/schemas/BreakdownItem'
+        member_center_stats_url:
+          $ref: '#/components/schemas/MemberCenterStatsUrl'
+      additionalProperties: false
+    OrderSummary:
+      type: object
+      required:
+      - order_id
+      - product_type
+      - status
+      - api_domain
+      properties:
+        order_id:
+          type: string
+        product_type:
+          type: string
+        status:
+          type: string
+        api_domain:
+          $ref: '#/components/schemas/ApiDomain'
+        expires_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        auto_renew:
+          type: boolean
+      additionalProperties: false
+    ProductConfigurationMap:
+      type: object
+      description: key 必须属于同一 product_type/spec_version 的 configuration_fields[].name
+      maxProperties: 64
+      propertyNames:
+        type: string
+        pattern: ^(?!.*(?:secret|password|passwd|token|credential|private_key|api_key))[a-z][a-z0-9_]{0,63}$
+      additionalProperties:
+        $ref: '#/components/schemas/ConfigurationValue'
+      x-kdl-key-source: same-product-and-spec-version.configuration_fields[].name
+    ProductLimitMap:
+      type: object
+      description: 同一 product_type/spec_version 下的服务端限制项白名单
+      maxProperties: 64
+      propertyNames:
+        type: string
+        pattern: ^[a-z][a-z0-9_]{0,63}$
+      additionalProperties:
+        $ref: '#/components/schemas/ProductLimitValue'
+      x-kdl-key-source: server-allowlist-by-product_type-and-spec_version
+    ProductLimitValue:
+      description: 产品限制只允许非负数值或布尔开关
+      anyOf:
+      - type: integer
+        minimum: 0
+      - type: number
+        minimum: 0
+      - type: boolean
+    ProductList:
+      type: object
+      required:
+      - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductSummary'
+      additionalProperties: false
+    ProductPurchaseRequest:
+      type: object
+      required:
+      - quote_id
+      - product_type
+      - spec_version
+      - configuration
+      properties:
+        quote_id:
+          type: string
+          minLength: 1
+          maxLength: 128
+          pattern: ^[^\r\n]+$
+          x-kdl-forbid-cr-lf: true
+        product_type:
+          type: string
+          minLength: 1
+        spec_version:
+          type: string
+          minLength: 1
+        configuration:
+          $ref: '#/components/schemas/ProductConfigurationMap'
+          minProperties: 1
+      additionalProperties: false
+    ProductPurchaseResult:
+      type: object
+      required:
+      - order_id
+      - status
+      - product_type
+      - spec_version
+      - configuration
+      - currency
+      - total_amount
+      - expires_at
+      - payment_url
+      - member_center_url
+      properties:
+        order_id:
+          type: string
+          pattern: ^[1-9][0-9]*$
+        status:
+          type: string
+          const: pending_payment
+        product_type:
+          type: string
+        spec_version:
+          type: string
+        configuration:
+          $ref: '#/components/schemas/ProductConfigurationMap'
+        currency:
+          type: string
+          const: CNY
+        total_amount:
+          $ref: '#/components/schemas/DecimalAmount'
+        expires_at:
+          type: string
+          format: date-time
+        payment_url:
+          $ref: '#/components/schemas/MemberCenterPaymentUrl'
+        member_center_url:
+          $ref: '#/components/schemas/MemberCenterOrderDetailUrl'
+      additionalProperties: false
+    ProductQuote:
+      type: object
+      required:
+      - quote_id
+      - product_type
+      - spec_version
+      - configuration
+      - currency
+      - total_amount
+      - line_items
+      - expires_at
+      - purchase_url
+      properties:
+        quote_id:
+          type: string
+        product_type:
+          type: string
+        spec_version:
+          type: string
+        configuration:
+          $ref: '#/components/schemas/ProductConfigurationMap'
+        currency:
+          type: string
+          const: CNY
+        total_amount:
+          $ref: '#/components/schemas/DecimalAmount'
+        line_items:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuoteLineItem'
+        expires_at:
+          type: string
+          format: date-time
+        purchase_url:
+          $ref: '#/components/schemas/PurchaseUrl'
+      additionalProperties: false
+    ProductQuoteRequest:
+      type: object
+      required:
+      - product_type
+      - spec_version
+      - configuration
+      properties:
+        product_type:
+          type: string
+        spec_version:
+          type: string
+        configuration:
+          $ref: '#/components/schemas/ProductConfigurationMap'
+          minProperties: 1
+      additionalProperties: false
+    ProductSpec:
+      type: object
+      required:
+      - product_type
+      - spec_version
+      - configuration_fields
+      - configuration_rules
+      - limits
+      - constraints
+      properties:
+        product_type:
+          type: string
+        spec_version:
+          type: string
+          description: 标识同一次有效产品配置
+        configuration_fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConfigurationField'
+        configuration_rules:
+          type: array
+          maxItems: 64
+          description: 仅允许有限 condition/effect 规则，禁止任意表达式或代码执行
+          items:
+            $ref: '#/components/schemas/ConfigurationRule'
+        limits:
+          $ref: '#/components/schemas/ProductLimitMap'
+        constraints:
+          type: array
+          items:
+            type: string
+      additionalProperties: false
+    ProductSummary:
+      type: object
+      required:
+      - product_type
+      - name
+      - summary
+      - suitable_scenarios
+      - unsuitable_scenarios
+      - documentation_url
+      - purchase_url
+      - value_dimensions
+      properties:
+        product_type:
+          type: string
+        name:
+          type: string
+        summary:
+          type: string
+        suitable_scenarios:
+          type: array
+          items:
+            type: string
+        unsuitable_scenarios:
+          type: array
+          items:
+            type: string
+        documentation_url:
+          $ref: '#/components/schemas/DocumentationUrl'
+        purchase_url:
+          $ref: '#/components/schemas/PurchaseUrl'
+        value_dimensions:
+          type: array
+          minItems: 5
+          maxItems: 5
+          items:
+            $ref: '#/components/schemas/ProductValueDimension'
+      additionalProperties: false
+    ProductValueDimension:
+      type: object
+      required:
+      - category
+      - title
+      - publication_status
+      - content
+      - evidence_url
+      properties:
+        category:
+          type: string
+          enum:
+          - sla
+          - resource_isolation
+          - technical_support
+          - risk_control
+          - delivery
+        title:
+          type: string
+          minLength: 1
+          maxLength: 100
+        publication_status:
+          type: string
+          enum:
+          - approved
+          - pending_approval
+        content:
+          type:
+          - string
+          - 'null'
+          maxLength: 1000
+        evidence_url:
+          anyOf:
+          - $ref: '#/components/schemas/DocumentationUrl'
+          - type: 'null'
+      additionalProperties: false
+      x-kdl-invariants:
+      - approved requires non-null content and evidence_url
+      - pending_approval requires content=null and evidence_url=null
+    PurchaseUrl:
+      type: string
+      format: uri
+      pattern: ^https://www\.kuaidaili\.com/cart2/\?t=[A-Za-z0-9_-]+$
+      x-kdl-official-url-policy:
+        exact_host: www.kuaidaili.com
+        exact_paths:
+        - /cart2/
+        allowed_query_keys:
+        - t
+        required_query_keys:
+        - t
+        query_value_patterns:
+          t: ^[A-Za-z0-9_-]+$
+        fragment: forbidden
+        redirects: revalidate-same-policy
+    QuoteLineItem:
+      type: object
+      required:
+      - label
+      - amount
+      properties:
+        label:
+          type: string
+        amount:
+          $ref: '#/components/schemas/DecimalAmount'
+      additionalProperties: false
+    SuccessEnvelope:
+      type: object
+      required:
+      - success
+      - data
+      - request_id
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: object
+        request_id:
+          type: string
+          pattern: ^req_
+      additionalProperties: false
+    SupportTicketCreateRequest:
+      type: object
+      required:
+      - ticket_type
+      - subject
+      - body
+      - occurred_at_start
+      - occurred_at_end
+      - timezone
+      properties:
+        ticket_type:
+          $ref: '#/components/schemas/SupportTicketType'
+        subject:
+          type: string
+          minLength: 1
+          maxLength: 200
+          pattern: ^[^\r\n]+$
+          x-kdl-forbid-cr-lf: true
+        body:
+          type: string
+          minLength: 1
+          maxLength: 1500
+          pattern: ^[^\r\n]+$
+          x-kdl-forbid-cr-lf: true
+        order_id:
+          type: string
+          pattern: ^[1-9][0-9]*$
+        occurred_at_start:
+          type: string
+          format: date-time
+        occurred_at_end:
+          type: string
+          format: date-time
+        timezone:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: ^[A-Za-z0-9_+-/]+$
+          description: IANA 时区标识，例如 Asia/Shanghai
+      additionalProperties: false
+    SupportTicketCreateResult:
+      type: object
+      required:
+      - ticket_id
+      - status
+      - ticket_type
+      - member_center_url
+      properties:
+        ticket_id:
+          type: string
+          pattern: ^[1-9][0-9]*$
+        status:
+          type: string
+          const: pending_reply
+        ticket_type:
+          $ref: '#/components/schemas/SupportTicketType'
+        order_id:
+          type: string
+          pattern: ^[1-9][0-9]*$
+        member_center_url:
+          $ref: '#/components/schemas/MemberCenterTicketUrl'
+      additionalProperties: false
+    SupportTicketType:
+      type: string
+      enum:
+      - technical
+      - billing
+      - account
+      - product
+      - other
+      description: 当前支持的工单类型，仅接受登记值
+    TicketPreview:
+      type: object
+      required:
+      - preview_text
+      - attachments_hint
+      properties:
+        preview_text:
+          type: string
+        attachments_hint:
+          type: array
+          items:
+            type: string
+      additionalProperties: false
+    TicketPreviewRequest:
+      type: object
+      required:
+      - subject
+      - body
+      properties:
+        subject:
+          type: string
+          minLength: 1
+          maxLength: 200
+        body:
+          type: string
+          minLength: 1
+          maxLength: 10000
+        order_id:
+          type: string
+      additionalProperties: false
+    TrialConfigurationMap:
+      type: object
+      description: 由服务端按 product_type/trial_spec_id 投影的试用配置白名单
+      maxProperties: 64
+      propertyNames:
+        type: string
+        pattern: ^(?!.*(?:secret|password|passwd|token|credential|private_key|api_key))[a-z][a-z0-9_]{0,63}$
+      additionalProperties:
+        $ref: '#/components/schemas/ConfigurationValue'
+      x-kdl-key-source: server-allowlist-by-product_type-and-trial_spec_id
+    TrialConstraint:
+      type: object
+      required:
+      - code
+      - message
+      properties:
+        code:
+          type: string
+          pattern: ^[A-Z][A-Z0-9_]*$
+        message:
+          type: string
+          minLength: 1
+          maxLength: 500
+      additionalProperties: false
+    TrialEligibility:
+      type: object
+      required:
+      - product_type
+      - eligible
+      - trial_specs
+      properties:
+        product_type:
+          type: string
+        eligible:
+          type: boolean
+        reason_code:
+          type:
+          - string
+          - 'null'
+        trial_specs:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrialSpec'
+        trial_url:
+          $ref: '#/components/schemas/TrialUrl'
+      additionalProperties: false
+    TrialEligibilityList:
+      type: object
+      required:
+      - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrialEligibility'
+      additionalProperties: false
+    TrialSpec:
+      type: object
+      required:
+      - trial_spec_id
+      - name
+      - configuration
+      - limits
+      - constraints
+      - valid_days
+      properties:
+        trial_spec_id:
+          type: string
+        name:
+          type: string
+        configuration:
+          $ref: '#/components/schemas/TrialConfigurationMap'
+        limits:
+          $ref: '#/components/schemas/ProductLimitMap'
+        constraints:
+          type: array
+          maxItems: 32
+          items:
+            $ref: '#/components/schemas/TrialConstraint'
+        valid_days:
+          type: integer
+          minimum: 1
+      additionalProperties: false
+    TrialUrl:
+      type:
+      - string
+      - 'null'
+      format: uri
+      pattern: ^https://www\.kuaidaili\.com/freetest/$
+      x-kdl-official-url-policy:
+        exact_host: www.kuaidaili.com
+        exact_paths:
+        - /freetest/
+        query: forbidden
+        fragment: forbidden
+        redirects: revalidate-same-policy
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: KDL Agent credential

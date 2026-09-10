@@ -1,0 +1,46 @@
+version: 2
+builds:
+  - id: kdl-agent
+    binary: kdl-agent
+    env: [CGO_ENABLED=0]
+    flags: [-trimpath]
+    ldflags:
+      - -s -w -X github.com/gizaZerozhang/kdl-agent-cli/cmd.Version={{ .Version }} -X github.com/gizaZerozhang/kdl-agent-cli/cmd.Commit={{ .FullCommit }}
+    goos: [darwin, linux, windows]
+    goarch: [amd64, arm64]
+    ignore:
+      - goos: windows
+        goarch: arm64
+archives:
+  - formats: [tar.gz]
+    name_template: "kdl-agent_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - LICENSE
+      - THIRD_PARTY_NOTICES.txt
+      - README.md
+      - CHANGELOG.md
+      - src: .release/BUILD.json
+        dst: BUILD.json
+checksum:
+  name_template: SHA256SUMS
+notarize:
+  macos:
+    - enabled: '{{ isEnvSet "MACOS_SIGN_P12" }}'
+      ids: [kdl-agent]
+      sign:
+        certificate: '{{ .Env.MACOS_SIGN_P12 }}'
+        password: '{{ .Env.MACOS_SIGN_PASSWORD }}'
+      notarize:
+        issuer_id: '{{ .Env.MACOS_NOTARY_ISSUER_ID }}'
+        key_id: '{{ .Env.MACOS_NOTARY_KEY_ID }}'
+        key: '{{ .Env.MACOS_NOTARY_KEY_PATH }}'
+        wait: true
+        timeout: 20m
+release:
+  draft: true
+  prerelease: auto
+changelog:
+  sort: asc

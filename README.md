@@ -6,6 +6,18 @@
 
 源码许可证见 [LICENSE](./LICENSE)。
 
+## npm 安装
+
+需要 Node.js 22.14+ 和用户可写的 npm 全局目录。首个预发行目标为 `0.1.0-beta.1`，仅在同版本 GitHub Release 与 npm 发布完成后可安装：
+
+```bash
+npx @zerozhang-giza/kdl-agent@0.1.0-beta.1 install
+```
+
+向导安装 CLI 与同版本 Skill，然后引导本机隐藏输入凭证并验证首次只读查询。Agent 自动安装使用 `install --yes --agent codex --no-login`，由用户在本地终端完成登录。仅安装 CLI 可执行 `npm install -g @zerozhang-giza/kdl-agent@0.1.0-beta.1`。
+
+npm 包按平台下载 GitHub Release 原生二进制并验证内置 SHA256。beta 的 macOS 程序未签名/公证；最低系统和真实业务仍待专项验收。安装、升级、回退与卸载见[安装指南](./docs/install.md)，维护者见[发行操作](./docs/releasing.md)。
+
 ## 从源码构建
 
 维护者需要 Go 1.23.6+、Git。构建原生二进制后，使用者无需安装 Go、Python 或 Node.js。

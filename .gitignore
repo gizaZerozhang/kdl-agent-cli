@@ -8,3 +8,9 @@ kdl-agent.toml
 credentials.toml
 __pycache__/
 .DS_Store
+/node_modules/
+/.native/
+/.release/
+/SHA256SUMS
+/release.json
+*.tgz
