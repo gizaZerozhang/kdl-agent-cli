@@ -4,6 +4,7 @@
 
 ## 0.1.0-beta.2 - 2026-09-10
 
+- GitHub Release 与 npm 已公开，五平台安装验证通过；首次实际 Trusted Publishing/OIDC 发行成功，registry 包与固定候选一致并提供 provenance。
 - 新增代理 Basic 鉴权与白名单只读命令，明确订单 API 密钥和代理连接凭据的区别。
 - 统一 Gateway 错误信封、字段级校验和 Retry-After 提示，补齐 HTTPS 连接指南与配套 Skill。
 - 安装下载增加有限重试与半包清理，支持 KDL_AGENT_DOWNLOAD_TIMEOUT_MS；永久错误不重试，失败提供网络排查入口。

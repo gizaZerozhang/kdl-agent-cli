@@ -4,6 +4,10 @@
 
 ## 首次 beta 发布记录
 
+最新发行：`v0.1.0-beta.2`，源码 `b96a7061450d8b4c6899c52442307ac0ba9fdb89`。[候选与五平台验证](https://github.com/gizaZerozhang/kdl-agent-cli/actions/runs/34460103213) 全部通过；[npm Trusted Publishing](https://github.com/gizaZerozhang/kdl-agent-cli/actions/runs/34460767167) 已实际完成 OIDC/provenance 发布。固定 npm 包 SHA256 为 `149e3bf2bcc98a414582baf18b0494a2786f11ecd2f541ffb645f5b999420822`，registry 下载包与 Release 一致。`beta` 指向 beta.2，`latest` 仍为 beta.1；继续使用精确 beta 或 beta 标签。
+
+以下为 beta.1 首发时的历史记录；后续 OIDC 验证已由上述 beta.2 发行完成。
+
 2026-09-10 已公开 [v0.1.0-beta.1](https://github.com/gizaZerozhang/kdl-agent-cli/releases/tag/v0.1.0-beta.1) 与 [npm 0.1.0-beta.1](https://www.npmjs.com/package/@zerozhang-giza/kdl-agent/v/0.1.0-beta.1)，源码 commit 为 `a50bc08164a9ab11a8f9d8b5435eb3553fcdeed8`。发布包 SHA256 为 `eac0576e2ef9c1cdc2c76d95f48152a82e8a8b28aea2364b992509c9ddafc9f6`，registry 下载包与 Release 固定候选一致。公开 tag 和附件不可覆盖。
 
 [发行 CI](https://github.com/gizaZerozhang/kdl-agent-cli/actions/runs/34433571096) 的候选、五平台安装和 Draft 共 7 项通过；21 项 npm 回归、Go test/vet、匿名 npx 精确版本与 beta 向导、Codex Skill 实装、同版本跳过、跨目录执行、卸载保留配置/Skill、禁用生命周期脚本后首次运行补装通过。最低系统、Windows ACL 和真实业务仍待专项验收。
