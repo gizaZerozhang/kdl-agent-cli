@@ -83,6 +83,7 @@ func NewRootCmd() *cobra.Command {
 	root.AddCommand(newMsgCmd())
 	root.AddCommand(newTicketCmd())
 	root.AddCommand(newProxyCmd())
+	root.AddCommand(newUpdateCmd())
 
 	root.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		commandOut, commandErr = cmd.OutOrStdout(), cmd.ErrOrStderr()

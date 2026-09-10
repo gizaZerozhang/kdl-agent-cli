@@ -4,6 +4,7 @@ const { spawn } = require('node:child_process');
 async function main() {
   const args = process.argv.slice(2);
   if (args[0] === 'install') return require('./wizard.cjs').main(args.slice(1));
+  if (args[0] === 'update' && args[1] !== 'check') return require('./wizard.cjs').main(args.slice(1), { mode: 'update' });
   const binary = await require('./runtime/install.cjs').ensureInstalled();
   const child = spawn(binary, args, { stdio: 'inherit' });
   for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => child.kill(signal));

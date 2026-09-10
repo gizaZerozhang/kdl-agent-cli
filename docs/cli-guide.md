@@ -247,13 +247,15 @@ Windows 对应 `%USERPROFILE%\.kdl\`。macOS/Linux 目录权限为 `0700`、凭�
 kdl-agent --version
 ```
 
-升级或回退时，将下方版本号替换为[版本记录](https://github.com/gizaZerozhang/kdl-agent-cli/releases)中的目标版本，并安装同版本 Skill：
+升级或回退时，将下方版本号替换为[版本记录](https://github.com/gizaZerozhang/kdl-agent-cli/releases)中的目标版本，同步安装 CLI 和 Skill（示例目标为 Codex）：
 
 ```bash
-npm install -g @zerozhang-giza/kdl-agent@0.1.0-beta.2
+npx --yes @zerozhang-giza/kdl-agent@0.1.0-beta.3 install --yes --agent codex --no-login
 ```
 
-历史 Skill 使用对应 tag 的 `skills/kdl-agent/SKILL.md`。更新后执行一次账户查询，验证接入。
+升级保留登录配置；Skill 安装失败时重试同一命令。完成后核对版本、刷新 Agent 会话，再执行一次账户查询。发布新版不会静默替换本机安装。
+
+后续支持 `update check` 的版本会由 Skill 在任务开始时检查新版，提示并经你确认后同步升级。旧版需要先按上述流程升级一次。
 
 卸载：
 

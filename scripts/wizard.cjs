@@ -31,8 +31,22 @@ function parse(args) {
   return options;
 }
 
-async function main(args, { run = command, install = ensureInstalled, readConfig = config, checkBinary = verifyBinary, tty = process.stdin.isTTY } = {}) {
+async function confirmUpdate() {
+  const prompt = readline.createInterface({ input: process.stdin, output: process.stdout });
+  try { return /^y(es)?$/i.test((await prompt.question('确认升级 CLI 与同版本 Skill？[y/N] ')).trim()); }
+  finally { prompt.close(); }
+}
+
+async function main(args, { run = command, install = ensureInstalled, readConfig = config, checkBinary = verifyBinary, tty = process.stdin.isTTY, mode = 'install', confirm = confirmUpdate } = {}) {
   const options = parse(args);
+  if (mode === 'update') {
+    options.noLogin = true;
+    if (options.help) {
+      console.log('同步升级 CLI 与同版本 Skill\n检查新版：kdl-agent update check --format json\n用法：npx --yes @zerozhang-giza/kdl-agent@<目标版本> update --agent codex [--yes]\n默认询问确认；非交互必须显式 --yes。保留登录配置，Skill 失败时重复同一命令修复。');
+      return;
+    }
+    if (options.noSkills) throw new Error('同步升级不能跳过 Skill；请移除 --no-skills');
+  }
   if (options.help) {
     console.log('安装快代理 CLI 与同版本 Skill\n\n用法：npx <包名>@<版本> install [--yes] [--agent codex] [--no-login] [--no-skills]\n\n--yes 非交互安装；安装 Skill 时须指定 --agent\n--no-login 仅安装，稍后在本地终端执行 kdl-agent auth login\n--no-skills 跳过 Skill，适用于直接使用 CLI\n升级或回退：使用目标版本再次运行；卸载 npm 包保留 .kdl 与 Skill。');
     return;
@@ -42,6 +56,7 @@ async function main(args, { run = command, install = ensureInstalled, readConfig
   const { pkg, repository } = readConfig();
   if (!/^@[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/.test(pkg.name)) throw new Error('npm 包名尚未绑定');
   console.log(`目标版本：${pkg.name}@${pkg.version}`);
+  if (mode === 'update' && !options.yes && !await confirm()) { console.log('已取消升级，保留现有 CLI 与 Skill。'); return; }
   console.log('正在下载并校验原生程序...');
   await install();
   const prefixResult = run('npm', ['prefix', '-g'], { timeout: 15000 });
@@ -76,7 +91,7 @@ async function main(args, { run = command, install = ensureInstalled, readConfig
     if (result.status !== 0) throw new Error('CLI 已安装，Skill 安装未完成；重新运行此向导重试，已安装 CLI 将跳过');
     console.log('Skill：已安装；目标 Agent 可能需要刷新会话');
   } else console.log('Skill：按要求跳过');
-  if (options.noLogin) { console.log('登录：按要求跳过；用户稍后在本地终端执行 kdl-agent auth login 和 kdl-agent auth status'); return; }
+  if (options.noLogin) { console.log(mode === 'update' ? '升级完成，登录配置保持不变；请核对 kdl-agent --version，并刷新 Agent 会话。' : '登录：按要求跳过；用户稍后在本地终端执行 kdl-agent auth login 和 kdl-agent auth status'); return; }
   let status = run(binary, ['auth', 'status', '--format', 'json'], { timeout: 25000 });
   if (status.status !== 0) {
     if (!tty) throw new Error('CLI/Skill 已安装，登录待用户在本地终端完成：kdl-agent auth login');

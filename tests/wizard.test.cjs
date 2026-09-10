@@ -7,6 +7,37 @@ const path = require('node:path');
 const { main } = require('../scripts/wizard.cjs');
 const { config } = require('../scripts/runtime/install.cjs');
 
+test('取消升级不会下载或修改安装', async t => {
+  const f = fixture(t);
+  f.deps.mode = 'update'; f.deps.tty = true;
+  f.deps.confirm = async () => false;
+  f.deps.install = async () => assert.fail('不应下载');
+  await main(['--agent', 'codex'], f.deps);
+  assert.equal(f.calls.length, 0);
+});
+test('非交互升级必须确认，不能跳过 Skill', async t => {
+  const f = fixture(t); f.deps.mode = 'update';
+  await assert.rejects(main(['--agent', 'codex'], f.deps), /非交互/);
+  await assert.rejects(main(['--yes', '--no-skills'], f.deps), /不能跳过/);
+  await assert.rejects(main(['--yes'], f.deps), /指定目标/);
+  assert.equal(f.calls.length, 0);
+});
+test('确认升级同时安装 Skill，不访问登录凭证', async t => {
+  const f = fixture(t); f.deps.mode = 'update';
+  await main(['--yes', '--agent', 'codex'], f.deps);
+  assert.deepEqual(f.calls.map(c => c.name), ['npm', 'npm', 'npx']);
+});
+test('同版本修复 Skill 跳过全局 npm 安装', async t => {
+  const f = fixture(t); f.deps.mode = 'update';
+  const root = path.join(f.prefix, process.platform === 'win32' ? 'node_modules' : 'lib/node_modules', ...config().pkg.name.split('/'));
+  fs.mkdirSync(root, { recursive: true });
+  fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({ version: config().pkg.version }));
+  f.deps.checkBinary = () => {};
+  await main(['--yes', '--agent', 'codex'], f.deps);
+  assert.deepEqual(f.calls.map(c => c.name), ['npm', 'npx']);
+  assert.equal(f.calls[0].args[0], 'prefix');
+});
+
 function fixture(t) {
   const prefix = fs.mkdtempSync(path.join(os.tmpdir(), 'kdl-wizard-'));
   t.after(() => fs.rmSync(prefix, { recursive: true, force: true }));

@@ -2,6 +2,11 @@
 
 ## 未发布
 
+## 0.1.0-beta.3 - 2026-09-10
+
+- 增加匿名新版检查、确认后同步升级 CLI/Skill 的 npm update 入口，保留登录配置和失败恢复。
+- tag 流程经五平台验活和环境审批后自动公开 Release 并派发 npm；重复发布校验固定候选，冲突停止。
+
 ## 0.1.0-beta.2 - 2026-09-10
 
 - GitHub Release 与 npm 已公开，五平台安装验证通过；首次实际 Trusted Publishing/OIDC 发行成功，registry 包与固定候选一致并提供 provenance。

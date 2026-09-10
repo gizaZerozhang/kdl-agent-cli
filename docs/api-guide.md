@@ -117,7 +117,7 @@ curl --fail-with-body 'https://agent-gateway.kdlapi.com/v1/account/funds' \
 | `POST /v1/tickets` | 创建真实工单 | `support.ticket.create` | 必填 |
 | `POST /v1/orders/{order_id}/secret` | 获取订单密钥 | `order.secret.read` | 不使用 |
 
-“无”仅表示无需额外敏感 grant，不表示匿名可调用。下载[Agent Gateway API 的 OpenAPI 规范文件](https://github.com/gizaZerozhang/kdl-agent-cli/releases/download/v0.1.0-beta.2/openapi.yaml)。这里的 OpenAPI 指接口描述标准，文件描述的是本文的 Gateway API，不是原有订单 OpenAPI 产品的完整接口列表。通过[版本记录](https://github.com/gizaZerozhang/kdl-agent-cli/releases/tag/v0.1.0-beta.2)获取配套版本及兼容要求。
+“无”仅表示无需额外敏感 grant，不表示匿名可调用。下载[Agent Gateway API 的 OpenAPI 规范文件](https://github.com/gizaZerozhang/kdl-agent-cli/releases/download/v0.1.0-beta.3/openapi.yaml)。这里的 OpenAPI 指接口描述标准，文件描述的是本文的 Gateway API，不是原有订单 OpenAPI 产品的完整接口列表。通过[版本记录](https://github.com/gizaZerozhang/kdl-agent-cli/releases/tag/v0.1.0-beta.3)获取配套版本及兼容要求。
 
 本指南的稳定原文地址为 `https://stg3.kuaidaili.com/kdl-agent/docs/api-guide.md`，同版本快照为 webhp `/kdl-agent/releases/{version}/docs/api-guide.md`。所有指南提供 Markdown 原文，稳定原文跟随推荐版本；接入旧版本时使用其配套快照和 OpenAPI。webhp 文档地址不是 Gateway API 基址。
 

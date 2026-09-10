@@ -12,7 +12,7 @@
 
 [发行 CI](https://github.com/gizaZerozhang/kdl-agent-cli/actions/runs/34433571096) 的候选、五平台安装和 Draft 共 7 项通过；21 项 npm 回归、Go test/vet、匿名 npx 精确版本与 beta 向导、Codex Skill 实装、同版本跳过、跨目录执行、卸载保留配置/Skill、禁用生命周期脚本后首次运行补装通过。最低系统、Windows ACL 和真实业务仍待专项验收。
 
-首次发布由账号启用 2FA 后手工完成，不含 OIDC provenance。Trusted Publisher 已绑定下述仓库、工作流和环境，服务端回读权限为 publish 与 staged publish；实际 OIDC 发布待下一个需要发行的版本验证，不重复发布现有版本。
+首次发布由账号启用 2FA 后手工完成，不含 OIDC provenance；beta.2 已验证 Trusted Publishing，不重复发布现有版本。
 
 首次指定 `--tag beta` 后，registry 同时添加了 `latest`；完成认证后的官方 `npm dist-tag rm` 返回 HTTP 400，回读确认未删除。npm CLI [同类报告 #8490](https://github.com/npm/cli/issues/8490)记录了相同行为。当前文档只提供精确 beta 或 `@beta` 入口，latest 不作为稳定就绪证据；待稳定版本验收后再移动该标签，不虚构版本或撤销现有发布。
 
@@ -38,11 +38,13 @@ python3 scripts/release-assets.py collect dist dist/candidate
 npm run release:prepare -- dist/candidate dist/npm
 ```
 
-工具链固定 Go 1.23.6、GoReleaser 2.18.1、Node 22.14+；可信发布使用 npm 11.5.2。`v*` tag 触发 `release.yml`：测试、构建、嵌入 BUILD.json、固定 npm tgz、五平台运行验活，然后在 `github-release` 环境创建 Draft Release。当前仅开放 beta；稳定版签名及业务门尚未接入。
+工具链固定 Go 1.23.6、GoReleaser 2.18.1、Node 22.14+；可信发布使用 npm 11.5.2。`v*` tag 触发 `release.yml`：测试、构建、嵌入 BUILD.json、固定 npm tgz、五平台运行验活，然后经 `github-release` 环境审批校验并公开 Release，自动派发同 tag 的 npm 工作流。当前仅开放 beta；稳定版签名及业务门尚未接入。自动串联改动待下一新版本远端验证。
 
-发布前检查 npm 候选 pack-report.json 的允许文件范围、各平台运行结果，并下载 Draft 附件运行 `node scripts/verify-release.cjs <下载目录>`。公开同一批附件后，重新匿名验证下载，再发布候选 tgz 到 npm。首次建包通过本人 `npm login`/验证完成：`npm publish <候选 tgz> --access public --tag beta`，首次手工发布不声明 OIDC provenance。
+审批前检查 npm 候选 pack-report.json 的允许文件范围、各平台运行结果。工作流自动运行 `verify-release.cjs`，重试时核验已有 Release 附件，不覆盖候选；npm 发布失败时重试 `publish-npm.yml` 并指定同一 tag。
 
-npm Trusted Publisher 已配置：GitHub owner `gizaZerozhang`、repository `kdl-agent-cli`、workflow `publish-npm.yml`、environment `npm-production`。下一次有新版本需要发布时，运行该工作流并指定已公开的 beta tag，通过 OIDC/provenance 发布同一候选，并核验 registry 证明；配置成功不等于实际发布已验证。
+npm Trusted Publisher 已配置：GitHub owner `gizaZerozhang`、repository `kdl-agent-cli`、workflow `publish-npm.yml`、environment `npm-production`。环境审批后通过 OIDC/provenance 发布固定候选并验证 registry integrity；同版本一致时跳过，不移动 dist-tag，冲突时停止。发布后仍需隔离目录安装验收和 provenance 验证。
+
+日常操作：更新 package.json/锁文件与配套资料，测试通过后提交干净 commit，再创建并推送新的 `vX.Y.Z-beta.N` tag。已发行版本不可重用。工作流完成后同步官网精确版本和文档，官网部署独立执行。
 
 ## 稳定版门
 
