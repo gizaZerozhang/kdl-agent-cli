@@ -79,13 +79,27 @@ jobs:
     environment: github-release
     permissions:
       contents: write
+      actions: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           name: release-candidate
           path: dist/candidate
-      - name: 创建固定候选 Draft Release
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.14.0'
+      - run: npm ci --ignore-scripts
+      - run: node scripts/verify-release.cjs dist/candidate
+      - name: 发布固定候选并派发 npm
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" dist/candidate/* --verify-tag --draft --prerelease --title "快代理 CLI $GITHUB_REF_NAME" --notes-file dist/candidate/release-notes.md
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release download "$GITHUB_REF_NAME" --dir dist/existing
+            node scripts/verify-release.cjs dist/existing
+          else
+            gh release create "$GITHUB_REF_NAME" dist/candidate/* --verify-tag --draft --prerelease --title "快代理 CLI $GITHUB_REF_NAME" --notes-file dist/candidate/release-notes.md
+          fi
+          gh release edit "$GITHUB_REF_NAME" --draft=false --prerelease
+          gh workflow run publish-npm.yml --ref "$GITHUB_REF_NAME" -f tag="$GITHUB_REF_NAME"

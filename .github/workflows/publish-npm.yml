@@ -39,4 +39,4 @@ jobs:
           gh release download "$RELEASE_TAG" --dir dist/public-release
       - run: node scripts/verify-release.cjs dist/public-release
       - name: 通过 npm Trusted Publishing 发布
-        run: npm publish dist/public-release/npm-package.tgz --access public --tag beta --provenance
+        run: node scripts/publish-candidate.cjs dist/public-release/npm-package.tgz
