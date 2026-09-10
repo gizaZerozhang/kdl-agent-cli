@@ -203,13 +203,29 @@ func loadClient(f *cmdutil.Factory) (*client.Client, error) {
 }
 
 func fail(f *cmdutil.Factory, err error, code int) error {
-	f.Out.PrintError(err)
+	// 所有命令统一处理 Gateway 错误，下游错误保持原诊断格式。
 	var apiErr *client.APIError
 	if errors.As(err, &apiErr) && apiErr != nil {
+		if f.Out.Format == output.ModeJSON {
+			if envelope := apiErr.Response; envelope != nil {
+				if err := writeJSON(f.Out, envelope); err != nil {
+					return fail(f, err, code)
+				}
+			}
+		}
+		f.Out.PrintError(err)
+		if apiErr.RetryAfter > 0 {
+			fmt.Fprintf(f.Out.Stderr, "建议: 至少等待 %d 秒后重试（Retry-After）；不要自动重放结果不确定的写操作。\n", apiErr.RetryAfter)
+		}
+		for _, item := range apiErr.ValidationErrors() {
+			fmt.Fprintf(f.Out.Stderr, "  - %s\n", item)
+		}
 		if apiErr.Code == "AUTH_REQUIRED" || apiErr.Code == "CREDENTIAL_REVOKED" {
 			fmt.Fprintln(f.Out.Stderr, "建议: 前往会员中心 /uc/agent/settings/ 检查凭证，然后 kdl-agent auth login")
 		}
+		return &exitError{code: code}
 	}
+	f.Out.PrintError(err)
 	return &exitError{code: code}
 }
 

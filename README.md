@@ -8,13 +8,13 @@
 
 ## npm 安装
 
-需要 Node.js 22.14+ 和用户可写的 npm 全局目录。`0.1.0-beta.1` 已发布至 [npm](https://www.npmjs.com/package/@zerozhang-giza/kdl-agent/v/0.1.0-beta.1) 和 [GitHub Release](https://github.com/gizaZerozhang/kdl-agent-cli/releases/tag/v0.1.0-beta.1)，匿名安装与 Codex Skill 实装已验证：
+需要 Node.js 22.14+ 和用户可写的 npm 全局目录。`0.1.0-beta.2` 已发布至 [npm](https://www.npmjs.com/package/@zerozhang-giza/kdl-agent/v/0.1.0-beta.2) 和 [GitHub Release](https://github.com/gizaZerozhang/kdl-agent-cli/releases/tag/v0.1.0-beta.2)，匿名安装与 Codex Skill 实装已验证：
 
 ```bash
-npx @zerozhang-giza/kdl-agent@0.1.0-beta.1 install
+npx @zerozhang-giza/kdl-agent@0.1.0-beta.2 install
 ```
 
-向导安装 CLI 与同版本 Skill，然后引导本机隐藏输入凭证并验证首次只读查询。Agent 自动安装使用 `install --yes --agent codex --no-login`，由用户在本地终端完成登录。仅安装 CLI 可执行 `npm install -g @zerozhang-giza/kdl-agent@0.1.0-beta.1`。
+向导安装 CLI 与同版本 Skill，然后引导本机隐藏输入凭证并验证首次只读查询。Agent 自动安装使用 `install --yes --agent codex --no-login`，由用户在本地终端完成登录。仅安装 CLI 可执行 `npm install -g @zerozhang-giza/kdl-agent@0.1.0-beta.2`。
 
 npm 包按平台下载 GitHub Release 原生二进制并验证内置 SHA256。当前请显式指定 beta 版本或 `@beta`；npm 自动附加的 `latest` 仍指向该预发行版，不代表稳定就绪。beta 的 macOS 程序未签名/公证；最低系统和真实业务仍待专项验收。安装、升级、回退与卸载见[安装指南](./docs/install.md)，维护者见[发行操作](./docs/releasing.md)。
 

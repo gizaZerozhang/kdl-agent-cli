@@ -1,100 +1,22 @@
 # 快代理 Agent Gateway API 接入指南
 
-本文介绍快代理 **Agent Gateway API**，服务地址为 `https://agent-gateway.kdlapi.com`。它是 CLI 和 Agent 使用的账户及业务操作入口，不是原有代理提取、白名单等订单 OpenAPI 的接口手册。
+Agent Gateway API 用于账户查询与业务操作；代理提取、白名单操作使用订单 OpenAPI。
 
 | 接口体系 | 调用地址 | 身份凭证 | 主要用途 |
 | --- | --- | --- | --- |
 | Agent Gateway API（本文） | `https://agent-gateway.kdlapi.com/v1/` | 会员中心创建的 Agent 凭证，Bearer 认证 | 账户与订单查询、报价、创建待付款订单和工单、授权获取订单密钥 |
 | 订单 OpenAPI | 对应订单返回的 `api_domain` | 订单 `secret_id`、`secret_key`，按对应接口规则认证 | 代理提取、白名单等订单操作 |
 
-原有接口说明见[快代理 OpenAPI 文档](https://www.kuaidaili.com/doc/api/)。两套接口的域名和凭证不能混用；Gateway 返回订单密钥后，代理提取等请求直接发送到订单 OpenAPI，不经过 Gateway 通用转发。
-
-开发者和 Agent 可以通过 HTTPS 调用快代理 Gateway `/v1/` 接口，查询账户、代理订单、产品信息，并在授权后创建待付款订单、工单或获取订单密钥。无需安装 CLI；CLI 和直接 HTTP 调用使用相同的 Agent 凭证与 grant。
-
-## 阅读入口
-
-- [首次调用](#首次调用)
-- [公共约定](#公共约定)
-- [接口总览](#接口总览)
-- [账户与站内信](#账户与站内信)
-- [代理订单与接入信息](#代理订单与接入信息)
-- [产品规格报价与下单](#产品规格报价与下单)
-- [工单预览与创建](#工单预览与创建)
-- [订单密钥与订单 OpenAPI](#订单密钥与订单-openapi)
-- [错误与恢复](#错误与恢复)
-- 共同授权规则见[授权凭证与订单密钥](./cli-guide.md#授权凭证与订单密钥)。
+[订单 OpenAPI 文档](https://stg3.kuaidaili.com/doc/api/) · [授权说明](./cli-guide.md#授权凭证与订单密钥)
 
 ## 首次调用
 
-### 准备凭证
+在[Agent 设置](https://stg3.kuaidaili.com/uc/agent/settings/)创建凭证，由运行环境注入 `KDL_AGENT_TOKEN`，不要写入代码或对话。
 
-在[会员中心 Agent 设置](https://www.kuaidaili.com/uc/agent/settings/)创建有效凭证。基础查询无需开启敏感 grant。开发者将凭证保存在自己的受控运行环境，由 HTTP 客户端放入请求头，不放在 URL、请求正文、聊天或代码仓库中。
-
-```http
-GET /v1/account/funds HTTP/1.1
-Authorization: Bearer <AGENT_CREDENTIAL>
-Accept: application/json
-```
-
-`<AGENT_CREDENTIAL>` 仅表示运行时替换位置。正式 Gateway 根地址以官网公布为准，不使用示例域名或测试地址猜测正式服务。
-
-### 可运行的客户端示例
-
-以下 Python 3 标准库示例用于开发者本地手动验证，无第三方依赖；它从终端隐藏输入 Agent 凭证，关闭自动重定向，只输出查询结果。Agent 协助接入时，应让用户自行在本地执行凭证输入步骤，不读取该输入。
-
-```python
-import getpass
-import json
-import urllib.error
-import urllib.parse
-import urllib.request
-
-
-class NoRedirect(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        return None
-
-
-gateway = input("请输入官网公布的正式 Gateway 根地址：").strip().rstrip("/")
-parsed = urllib.parse.urlsplit(gateway)
-if (
-    parsed.scheme != "https"
-    or not parsed.hostname
-    or parsed.username is not None
-    or parsed.password is not None
-    or parsed.path
-    or parsed.query
-    or parsed.fragment
-    or parsed.port not in (None, 443)
-):
-    raise SystemExit("地址须为官网公布的 HTTPS 根地址")
-
-credential = getpass.getpass("Agent 凭证（隐藏输入）：").strip()
-if not credential:
-    raise SystemExit("凭证不能为空")
-request = urllib.request.Request(
-    gateway + "/v1/account/funds",
-    headers={"Authorization": "Bearer " + credential, "Accept": "application/json"},
-)
-opener = urllib.request.build_opener(NoRedirect())
-try:
-    with opener.open(request, timeout=30) as response:
-        result = json.load(response)
-    if result.get("success") is not True:
-        raise SystemExit("未获得成功结果，请核对服务响应")
-    print(json.dumps(result, ensure_ascii=False, indent=2))
-except urllib.error.HTTPError as exc:
-    print("HTTP 状态：", exc.code)
-    print("Retry-After：", exc.headers.get("Retry-After", "未提供"))
-    try:
-        result = json.load(exc)
-        print("错误码：", result.get("error", {}).get("code"))
-        print("request_id：", result.get("request_id"))
-    except (ValueError, AttributeError):
-        print("响应不是预期的 Gateway JSON，请核对地址")
-    raise SystemExit(1)
-except (urllib.error.URLError, TimeoutError):
-    raise SystemExit("网络或服务暂不可达，不能据此判定凭证失效")
+```bash
+curl --fail-with-body 'https://agent-gateway.kdlapi.com/v1/account/funds' \
+  -H "Authorization: Bearer ${KDL_AGENT_TOKEN}" \
+  -H 'Accept: application/json'
 ```
 
 成功响应示意：
@@ -110,8 +32,6 @@ except (urllib.error.URLError, TimeoutError):
   "request_id": "req_example"
 }
 ```
-
-这证明一次账户查询成功，不意味着敏感 grant 已开启。资金金额与订单 IP/流量额度不同，不能混用。
 
 ## 公共约定
 
@@ -145,7 +65,7 @@ except (urllib.error.URLError, TimeoutError):
     "next_action": {
       "type": "url",
       "label": "前往会员中心创建 Agent 凭证",
-      "url": "https://www.kuaidaili.com/uc/agent/settings/"
+      "url": "https://stg3.kuaidaili.com/uc/agent/settings/"
     }
   },
   "request_id": "req_example"
@@ -197,9 +117,9 @@ except (urllib.error.URLError, TimeoutError):
 | `POST /v1/tickets` | 创建真实工单 | `support.ticket.create` | 必填 |
 | `POST /v1/orders/{order_id}/secret` | 获取订单密钥 | `order.secret.read` | 不使用 |
 
-“无”仅表示无需额外敏感 grant，不表示匿名可调用。下载[Agent Gateway API 的 OpenAPI 规范文件](./openapi.yaml)。这里的 OpenAPI 指接口描述标准，文件描述的是本文的 Gateway API，不是原有订单 OpenAPI 产品的完整接口列表。配套版本及兼容要求见[安装指南](./install.md)和同版本 GitHub Release。
+“无”仅表示无需额外敏感 grant，不表示匿名可调用。下载[Agent Gateway API 的 OpenAPI 规范文件](https://github.com/gizaZerozhang/kdl-agent-cli/releases/download/v0.1.0-beta.2/openapi.yaml)。这里的 OpenAPI 指接口描述标准，文件描述的是本文的 Gateway API，不是原有订单 OpenAPI 产品的完整接口列表。通过[版本记录](https://github.com/gizaZerozhang/kdl-agent-cli/releases/tag/v0.1.0-beta.2)获取配套版本及兼容要求。
 
-本指南与 OpenAPI 随同版本 GitHub Release 提供 Markdown/YAML 原文。接入旧版本时使用对应 Release 的文档和规范；文档下载地址不是 Gateway API 基址。
+本指南的稳定原文地址为 `https://stg3.kuaidaili.com/kdl-agent/docs/api-guide.md`，同版本快照为 webhp `/kdl-agent/releases/{version}/docs/api-guide.md`。所有指南提供 Markdown 原文，稳定原文跟随推荐版本；接入旧版本时使用其配套快照和 OpenAPI。webhp 文档地址不是 Gateway API 基址。
 
 ## 账户与站内信
 
@@ -381,7 +301,9 @@ except (urllib.error.URLError, TimeoutError):
 3. `api_domain` 必须为 HTTPS、443 或默认端口、根路径，无用户信息、查询参数或片段；校验证书链与主机名，不自动跳转或降级 HTTP。
 4. 不向订单 OpenAPI 发送 Agent Bearer，也不将订单密钥当作 Gateway Bearer。
 
-Gateway 没有通用代理转发接口。CLI 的 `proxy fetch`、白名单便利命令在本地取得订单密钥后直连订单 OpenAPI；下游能力、额度、频率和请求语义由订单服务决定，不能直接套用 Gateway 写接口的幂等规则。
+Gateway 没有通用代理转发接口。CLI 的 `proxy fetch`、`proxy auth`（需支持该命令的版本）和白名单便利命令在本地取得订单密钥后直连订单 OpenAPI；下游能力、额度、频率和请求语义由订单服务决定，不能直接套用 Gateway 写接口的幂等规则。
+
+订单 SecretId/SecretKey 用于签名调用订单 API，不是代理用户名和密码。`GET /api/getproxyauthorization/` 返回 `data.type=Basic`、`data.credentials`，用于代理连接认证；也可按订单设置使用 IP 白名单。Basic 值仅交给代理，不能作为目标网站请求头。完整操作见[从提取到连接代理](./cli-guide.md#从提取到连接代理)。HTTP 407 后统计为空不能证明没有鉴权失败，需核对代理侧上报与统计归属。
 
 开启读取授权后，密钥可能进入客户选择的 Agent/模型。关闭 grant 或撤销 Agent 凭证仅阻止后续获取，已取得的密钥继续有效；需要失效时在订单 API 设置中重置，并同步更新其他客户端。详见[共同授权说明](./cli-guide.md#授权凭证与订单密钥)。
 
@@ -405,4 +327,4 @@ Gateway 没有通用代理转发接口。CLI 的 `proxy fetch`、白名单便利
 
 收到未知错误码时保留 HTTP 状态、错误码和请求标识，采取保守失败处理，不因错误消息“看起来可忽略”继续写入。网络超时或 5xx 不能证明订单/工单没有创建；再次执行时遵守同键同参数规则。
 
-支持排查只需提交发生时间、接口路径、错误码、`request_id` 及脱敏的必要参数。不要提交完整认证请求头、Secret 响应或未脱敏的工单正文。使用[调用监控](https://www.kuaidaili.com/uc/agent/monitor/)与[安全记录](https://www.kuaidaili.com/uc/agent/security/)核对 Gateway 调用和凭证变更。
+支持排查只需提交发生时间、接口路径、错误码、`request_id` 及脱敏的必要参数。不要提交完整认证请求头、Secret 响应或未脱敏的工单正文。使用[调用监控](https://stg3.kuaidaili.com/uc/agent/monitor/)与[安全记录](https://stg3.kuaidaili.com/uc/agent/security/)核对 Gateway 调用和凭证变更。

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/gizaZerozhang/kdl-agent-cli/internal/cmdutil"
+	"github.com/gizaZerozhang/kdl-agent-cli/internal/downstream"
 	"github.com/gizaZerozhang/kdl-agent-cli/internal/m3b"
 	"github.com/gizaZerozhang/kdl-agent-cli/internal/output"
 	"github.com/gizaZerozhang/kdl-agent-cli/internal/secret"
@@ -84,6 +85,38 @@ func newOrderCmd() *cobra.Command {
 	clearWL.Flags().String("order", "", "订单号（必填）")
 	clearWL.Flags().Bool("clear", true, "必须为 true")
 	whitelist.AddCommand(setWL, clearWL)
+	getWL := &cobra.Command{
+		Use: "get", Short: "读取当前白名单（不修改配置）", Args: cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			f := newFactory()
+			orderID, _ := cmd.Flags().GetString("order")
+			if strings.TrimSpace(orderID) == "" {
+				return fail(f, fmt.Errorf("需要 --order"), cmdutil.ExitConfig)
+			}
+			c, err := loadClient(f)
+			if err != nil {
+				return err
+			}
+			sec, err := secret.FetchOrderSecret(cmd.Context(), c, orderID)
+			if err != nil {
+				return fail(f, err, cmdutil.ExitRuntime)
+			}
+			data, err := downstream.GetWhitelist(sec.APIDomain, sec.SecretID, sec.SecretKey)
+			if err != nil {
+				return fail(f, err, cmdutil.ExitRuntime)
+			}
+			if f.Out.Format == output.ModeJSON {
+				return f.Out.PrintJSON(data)
+			}
+			fmt.Fprintf(f.Out.Stdout, "count=%d\n", data.Count)
+			for _, ip := range data.IPWhitelist {
+				fmt.Fprintln(f.Out.Stdout, ip)
+			}
+			return nil
+		},
+	}
+	getWL.Flags().String("order", "", "订单号（必填）")
+	whitelist.AddCommand(getWL)
 	cmd.AddCommand(whitelist)
 	return cmd
 }

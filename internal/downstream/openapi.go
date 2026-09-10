@@ -95,6 +95,9 @@ func callOpenAPIGet(baseURL, path string, params url.Values) (openAPIResponse, e
 		return openAPIResponse{}, fmt.Errorf("调用订单公开 API 失败: %w", err)
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return openAPIResponse{}, fmt.Errorf("订单公开 API HTTP %d", resp.StatusCode)
+	}
 
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	if err != nil {
@@ -103,6 +106,12 @@ func callOpenAPIGet(baseURL, path string, params url.Values) (openAPIResponse, e
 	var parsed openAPIResponse
 	if err := json.Unmarshal(body, &parsed); err != nil {
 		return openAPIResponse{}, fmt.Errorf("解析下游 JSON 失败: %w", err)
+	}
+	var required struct {
+		Code *int `json:"code"`
+	}
+	if json.Unmarshal(body, &required) != nil || required.Code == nil {
+		return openAPIResponse{}, fmt.Errorf("下游响应缺少 code")
 	}
 	return parsed, nil
 }
@@ -118,10 +127,20 @@ func readWhitelist(baseURL, secretID, secretKey string) (whitelistData, error) {
 		return whitelistData{}, fmt.Errorf("getipwhitelist 失败 code=%d msg=%s", resp.Code, resp.Msg)
 	}
 	var data whitelistData
+	if len(resp.Data) == 0 || string(resp.Data) == "null" {
+		return whitelistData{}, fmt.Errorf("白名单响应缺少 data")
+	}
 	if len(resp.Data) > 0 {
 		if err := json.Unmarshal(resp.Data, &data); err != nil {
 			return whitelistData{}, fmt.Errorf("解析白名单回读失败: %w", err)
 		}
+	}
+	var required struct {
+		IPs   *[]string `json:"ipwhitelist"`
+		Count *int      `json:"count"`
+	}
+	if json.Unmarshal(resp.Data, &required) != nil || required.IPs == nil || required.Count == nil || *required.Count < 0 {
+		return whitelistData{}, fmt.Errorf("白名单响应缺少有效列表或数量")
 	}
 	return data, nil
 }

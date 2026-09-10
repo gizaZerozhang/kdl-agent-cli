@@ -49,23 +49,30 @@ function allowedURL(raw) {
   return url;
 }
 
-async function download(raw, destination, redirects = 0) {
+function downloadTimeout() {
+  const raw = process.env.KDL_AGENT_DOWNLOAD_TIMEOUT_MS || '60000';
+  if (!/^\d+$/.test(raw) || Number(raw) < 1000 || Number(raw) > 600000) throw new Error('KDL_AGENT_DOWNLOAD_TIMEOUT_MS 必须为 1000–600000 毫秒');
+  return Number(raw);
+}
+
+async function downloadOnce(raw, destination, redirects = 0) {
   const url = allowedURL(raw);
+  const timeout = downloadTimeout();
   if (redirects > 5) throw new Error('下载重定向次数过多');
   const proxy = process.env.HTTPS_PROXY || process.env.https_proxy;
   const response = await new Promise((resolve, reject) => {
     const request = https.get(url, { agent: proxy ? new HttpsProxyAgent(proxy) : undefined, headers: { 'User-Agent': 'kdl-agent-installer' } }, resolve);
-    request.setTimeout(60000, () => request.destroy(new Error('下载超时，请检查网络或 HTTPS_PROXY')));
+    request.setTimeout(timeout, () => request.destroy(Object.assign(new Error('下载超时，请检查网络或 HTTPS_PROXY'), { code: 'ETIMEDOUT' })));
     request.on('error', reject);
   });
   if ([301, 302, 303, 307, 308].includes(response.statusCode)) {
     response.resume();
     if (!response.headers.location) throw new Error('下载重定向缺少地址');
-    return download(new URL(response.headers.location, url).href, destination, redirects + 1);
+    return downloadOnce(new URL(response.headers.location, url).href, destination, redirects + 1);
   }
   if (response.statusCode !== 200) {
     response.resume();
-    throw new Error(`下载失败 HTTP ${response.statusCode}；请核对版本及 Release 是否公开`);
+    throw Object.assign(new Error(`下载失败 HTTP ${response.statusCode}；请核对版本及 Release 是否公开`), { statusCode: response.statusCode });
   }
   let size = 0;
   const limit = new Transform({ transform(chunk, encoding, callback) {
@@ -73,6 +80,21 @@ async function download(raw, destination, redirects = 0) {
     callback(size > MAX_BYTES ? new Error('发行包超过大小限制') : null, chunk);
   } });
   await pipeline(response, limit, fs.createWriteStream(destination, { flags: 'wx', mode: 0o600 }));
+}
+
+// 仅重试临时下载故障；校验、解压与替换仍由安装事务执行一次。
+async function download(raw, destination, { attempt = downloadOnce, sleep = ms => new Promise(resolve => setTimeout(resolve, ms)) } = {}) {
+  allowedURL(raw);
+  downloadTimeout();
+  if (fs.existsSync(destination)) throw new Error('下载目标已存在');
+  for (let retry = 0; ; retry++) {
+    try { return await attempt(raw, destination); } catch (error) {
+      fs.rmSync(destination, { force: true });
+      const transient = ['ETIMEDOUT', 'ECONNRESET', 'ECONNREFUSED', 'EAI_AGAIN', 'ERR_STREAM_PREMATURE_CLOSE'].includes(error.code) || [408, 500, 502, 503, 504].includes(error.statusCode);
+      if (!transient || retry >= 2) throw error;
+      await sleep(1000 * 2 ** retry);
+    }
+  }
 }
 
 async function hashFile(file) {

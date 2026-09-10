@@ -1,6 +1,6 @@
 # 快代理 CLI 安装指南
 
-适用版本：`0.1.0-beta.1`，已发布的预发行版本，匿名安装与 Codex Skill 实装通过。当前显式指定版本或 `@beta`；npm 自动附加的 `latest` 同样指向该 beta，不代表稳定版已就绪。
+适用版本：`0.1.0-beta.2`，已发布的预发行版本，匿名安装与 Codex Skill 实装通过。当前显式指定版本或 `@beta`；npm 自动附加的 `latest` 同样指向该 beta，不代表稳定版已就绪。
 
 ## 环境
 
@@ -10,16 +10,18 @@
 
 ## 推荐安装
 
+安装器对暂时性下载故障最多尝试 3 次；`KDL_AGENT_DOWNLOAD_TIMEOUT_MS` 可设置单次连接空闲超时（默认 60000，范围 1000–600000 毫秒）。失败后可重新运行安装，旧程序保留；404、证书与 SHA256 错误不自动重试。
+
 使用 npm 安装向导。人类交互模式依次完成 CLI、同版本 Skill、隐藏输入登录、远端状态与首次只读查询；Skill 安装时选择实际使用的 Agent。
 
 ```bash
-npx @zerozhang-giza/kdl-agent@0.1.0-beta.1 install
+npx @zerozhang-giza/kdl-agent@0.1.0-beta.2 install
 ```
 
 Agent 协助安装时指定目标工具，并把凭证输入留给用户本地终端：
 
 ```bash
-npx @zerozhang-giza/kdl-agent@0.1.0-beta.1 install --yes --agent codex --no-login
+npx @zerozhang-giza/kdl-agent@0.1.0-beta.2 install --yes --agent codex --no-login
 ```
 
 `--agent` 使用 skills 工具支持的标识，例如 `codex`、`cursor`、`claude-code`。未经实测的工具不承诺兼容。只安装 CLI 可显式 `--no-skills`。仅安装成功不代表业务接入完成。
@@ -38,15 +40,15 @@ kdl-agent account summary --format json
 
 ## 独立入口
 
-只安装 npm CLI：`npm install -g @zerozhang-giza/kdl-agent@0.1.0-beta.1`。
+只安装 npm CLI：`npm install -g @zerozhang-giza/kdl-agent@0.1.0-beta.2`。
 
 Skill 可以单独安装；下面示例仅选 Codex，可换为实际工具：
 
 ```bash
-npx --yes skills@1.5.25 add https://github.com/gizaZerozhang/kdl-agent-cli/tree/v0.1.0-beta.1/skills/kdl-agent --global --skill kdl-agent --agent codex --yes
+npx --yes skills@1.5.25 add https://github.com/gizaZerozhang/kdl-agent-cli/tree/v0.1.0-beta.2/skills/kdl-agent --global --skill kdl-agent --agent codex --yes
 ```
 
-无 Node.js 的环境可下载 [GitHub Release](https://github.com/gizaZerozhang/kdl-agent-cli/releases/tag/v0.1.0-beta.1) 的对应原生包，核对 SHA256SUMS 后解压并放入用户 PATH；执行文件为 `kdl-agent` 或 `kdl-agent.exe`。
+无 Node.js 的环境可下载 [GitHub Release](https://github.com/gizaZerozhang/kdl-agent-cli/releases/tag/v0.1.0-beta.2) 的对应原生包，核对 SHA256SUMS 后解压并放入用户 PATH；执行文件为 `kdl-agent` 或 `kdl-agent.exe`。
 
 ## 升级、回退与卸载
 

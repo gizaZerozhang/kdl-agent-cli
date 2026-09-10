@@ -6,9 +6,34 @@ import (
 	"net/url"
 	"os"
 	"strings"
+
+	"github.com/gizaZerozhang/kdl-agent-cli/internal/config"
 )
 
 const envWhitelistMock = "KDL_AGENT_WHITELIST_MOCK"
+
+// GetWhitelist 只读当前列表；不修改白名单，不暴露签名 URL 或下游原文。
+func GetWhitelist(apiDomain, secretID, secretKey string) (whitelistData, error) {
+	base, err := resolveAPIBase(apiDomain)
+	if err != nil {
+		return whitelistData{}, fmt.Errorf("订单 API 地址不可用")
+	}
+	base, err = config.NormalizeGateway(base)
+	if err != nil {
+		return whitelistData{}, fmt.Errorf("订单 API 地址必须为 HTTPS；本机测试可用 HTTP")
+	}
+	data, err := readWhitelist(base, secretID, secretKey)
+	if err != nil {
+		return whitelistData{}, fmt.Errorf("读取白名单失败，请检查订单权限、状态与网络")
+	}
+	if data.Count != len(data.IPWhitelist) {
+		return whitelistData{}, fmt.Errorf("白名单响应数量不一致")
+	}
+	if data.IPWhitelist == nil {
+		data.IPWhitelist = []string{}
+	}
+	return data, nil
+}
 
 func whitelistMockEnabled() bool {
 	v := strings.TrimSpace(os.Getenv(envWhitelistMock))

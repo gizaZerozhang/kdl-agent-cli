@@ -7,7 +7,7 @@ const os = require('node:os');
 const tar = require('tar');
 const yazl = require('yazl');
 const { pipeline } = require('node:stream/promises');
-const { ensureInstalled, hashFile, target, checksums, allowedURL, extractBinary } = require('../scripts/runtime/install.cjs');
+const { ensureInstalled, hashFile, target, checksums, allowedURL, extractBinary, download } = require('../scripts/runtime/install.cjs');
 const { parse } = require('../scripts/wizard.cjs');
 
 function temporary(t) {
@@ -15,6 +15,51 @@ function temporary(t) {
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   return root;
 }
+
+test('暂时性下载故障有限重试并清理半包', async t => {
+  const file = path.join(temporary(t), 'archive');
+  let calls = 0;
+  const delays = [];
+  await download('https://github.com/a', file, { sleep: async ms => delays.push(ms), attempt: async (url, dest) => {
+    assert.equal(fs.existsSync(dest), false);
+    fs.writeFileSync(dest, 'partial');
+    if (++calls < 3) throw Object.assign(new Error('timeout'), { code: 'ETIMEDOUT' });
+    fs.writeFileSync(dest, 'complete');
+  } });
+  assert.equal(calls, 3);
+  assert.deepEqual(delays, [1000, 2000]);
+  assert.equal(fs.readFileSync(file, 'utf8'), 'complete');
+});
+
+test('下载失败到达上限；404 和证书错误不重试', async t => {
+  for (const [failure, expected] of [[{ code: 'ECONNRESET' }, 3], [{ statusCode: 404 }, 1], [{ code: 'CERT_HAS_EXPIRED' }, 1]]) {
+    const file = path.join(temporary(t), 'archive');
+    let calls = 0;
+    await assert.rejects(download('https://github.com/a', file, { sleep: async () => {}, attempt: async () => {
+      calls++; fs.writeFileSync(file, 'partial'); throw Object.assign(new Error('failure'), failure);
+    } }));
+    assert.equal(calls, expected);
+    assert.equal(fs.existsSync(file), false);
+  }
+});
+
+test('下载超时配置校验与已有目标保护', async t => {
+  const previous = process.env.KDL_AGENT_DOWNLOAD_TIMEOUT_MS;
+  const file = path.join(temporary(t), 'archive');
+  try {
+    for (const invalid of ['0', 'abc', '600001']) {
+      process.env.KDL_AGENT_DOWNLOAD_TIMEOUT_MS = invalid;
+      await assert.rejects(download('https://github.com/a', file), /KDL_AGENT_DOWNLOAD_TIMEOUT_MS/);
+    }
+    process.env.KDL_AGENT_DOWNLOAD_TIMEOUT_MS = '120000';
+    fs.writeFileSync(file, 'existing');
+    await assert.rejects(download('https://github.com/a', file), /已存在/);
+    assert.equal(fs.readFileSync(file, 'utf8'), 'existing');
+  } finally {
+    if (previous === undefined) delete process.env.KDL_AGENT_DOWNLOAD_TIMEOUT_MS;
+    else process.env.KDL_AGENT_DOWNLOAD_TIMEOUT_MS = previous;
+  }
+});
 async function fixture(t, platform = 'linux', arch = 'x64') {
   const root = temporary(t);
   const source = path.join(root, 'source');

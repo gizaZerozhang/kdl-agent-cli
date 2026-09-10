@@ -39,6 +39,30 @@ func TestGetSuccess(t *testing.T) {
 	}
 }
 
+func TestRateLimitPreservesRetryAfter(t *testing.T) {
+	for _, value := range []string{"7", "invalid", "-1"} {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Retry-After", value)
+			w.WriteHeader(429)
+			_, _ = w.Write([]byte(`{"success":false,"error":{"code":"RATE_LIMITED","message":"limited"}}`))
+		}))
+		c, _ := client.New(config.Resolved{GatewayURL: srv.URL, Token: "test"})
+		_, err := c.Get(context.Background(), "/v1/account/summary", nil)
+		var apiErr *client.APIError
+		if !errors.As(err, &apiErr) {
+			t.Fatal("应返回 APIError")
+		}
+		want := 0
+		if value == "7" {
+			want = 7
+		}
+		if apiErr.RetryAfter != want {
+			t.Fatalf("等待时间 = %d", apiErr.RetryAfter)
+		}
+		srv.Close()
+	}
+}
+
 func TestRedirectDoesNotValidateOrForwardCredential(t *testing.T) {
 	forwarded := false
 	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { forwarded = true }))
@@ -100,5 +124,15 @@ func TestGetAPIError(t *testing.T) {
 	}
 	if apiErr.Code != "AUTH_REQUIRED" {
 		t.Fatalf("code: %s", apiErr.Code)
+	}
+}
+
+func TestAPIErrorValidationErrors(t *testing.T) {
+	err := &client.APIError{
+		Details: json.RawMessage(`{"validation_errors":["configuration.tps_reqrate_num 低于最小值 5"]}`),
+	}
+	got := err.ValidationErrors()
+	if len(got) != 1 || got[0] != "configuration.tps_reqrate_num 低于最小值 5" {
+		t.Fatalf("validation errors: %#v", got)
 	}
 }

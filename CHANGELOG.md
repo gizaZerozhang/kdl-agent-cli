@@ -2,6 +2,11 @@
 
 ## 未发布
 
+## 0.1.0-beta.2 - 2026-09-10
+
+- 新增代理 Basic 鉴权与白名单只读命令，明确订单 API 密钥和代理连接凭据的区别。
+- 统一 Gateway 错误信封、字段级校验和 Retry-After 提示，补齐 HTTPS 连接指南与配套 Skill。
+- 安装下载增加有限重试与半包清理，支持 KDL_AGENT_DOWNLOAD_TIMEOUT_MS；永久错误不重试，失败提供网络排查入口。
 - 更新已公开的 beta 安装入口、发行证据、Trusted Publisher 配置与 latest 标签限制说明。
 
 ## 0.1.0-beta.1 - 2026-09-10

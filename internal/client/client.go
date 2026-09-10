@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -36,6 +37,9 @@ type APIError struct {
 	Code       string
 	Message    string
 	RequestID  string
+	Details    json.RawMessage
+	Response   *GatewayResponse
+	RetryAfter int
 }
 
 func (e *APIError) Error() string {
@@ -43,6 +47,20 @@ func (e *APIError) Error() string {
 		return fmt.Sprintf("%s: %s (request_id=%s)", e.Code, e.Message, e.RequestID)
 	}
 	return fmt.Sprintf("%s: %s", e.Code, e.Message)
+}
+
+// ValidationErrors 从 error.details.validation_errors 提取字段级原因。
+func (e *APIError) ValidationErrors() []string {
+	if e == nil || len(e.Details) == 0 {
+		return nil
+	}
+	var details struct {
+		ValidationErrors []string `json:"validation_errors"`
+	}
+	if err := json.Unmarshal(e.Details, &details); err != nil {
+		return nil
+	}
+	return details.ValidationErrors
 }
 
 // Client Gateway HTTP 客户端。
@@ -136,6 +154,10 @@ func (c *Client) do(
 		return nil, fmt.Errorf("请求 Gateway 失败 (%s): %w", u.String(), err)
 	}
 	defer resp.Body.Close()
+	retryAfter := 0
+	if resp.StatusCode == http.StatusTooManyRequests {
+		retryAfter = parseRetryAfter(resp.Header.Get("Retry-After"), time.Now())
+	}
 
 	raw, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -164,6 +186,7 @@ func (c *Client) do(
 	if !envelope.Success {
 		code := "UNKNOWN"
 		msg := fmt.Sprintf("HTTP %d", resp.StatusCode)
+		var details json.RawMessage
 		if envelope.Error != nil {
 			if envelope.Error.Code != "" {
 				code = envelope.Error.Code
@@ -171,12 +194,16 @@ func (c *Client) do(
 			if envelope.Error.Message != "" {
 				msg = envelope.Error.Message
 			}
+			details = envelope.Error.Details
 		}
 		return &envelope, &APIError{
 			StatusCode: resp.StatusCode,
 			Code:       code,
 			Message:    msg,
 			RequestID:  envelope.RequestID,
+			Details:    details,
+			Response:   &envelope,
+			RetryAfter: retryAfter,
 		}
 	}
 
@@ -190,4 +217,14 @@ func (c *Client) do(
 	}
 
 	return &envelope, nil
+}
+
+func parseRetryAfter(value string, now time.Time) int {
+	if seconds, err := strconv.Atoi(strings.TrimSpace(value)); err == nil && seconds >= 0 {
+		return seconds
+	}
+	if deadline, err := http.ParseTime(value); err == nil && deadline.After(now) {
+		return int(deadline.Sub(now).Seconds()) + 1
+	}
+	return 0
 }
