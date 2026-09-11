@@ -23,6 +23,24 @@ func authHome(t *testing.T) string {
 	return home
 }
 
+func TestAuthStatusMissingGrantsRemainsUnknown(t *testing.T) {
+	authHome(t)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"success":true,"data":{"grants":{"unrecognized":true}},"request_id":"test"}`))
+	}))
+	defer srv.Close()
+	t.Setenv("KDL_AGENT_GATEWAY_URL", srv.URL)
+	t.Setenv("KDL_AGENT_TOKEN", "sentinel-valid")
+	out, _, err := runAuth([]string{"auth", "status", "--format", "json"}, "")
+	if err != nil || !strings.Contains(out, `"grants": {}`) || strings.Contains(out, "unrecognized") {
+		t.Fatalf("缺失授权不应推断或透传: %s %v", out, err)
+	}
+	out, _, err = runAuth([]string{"auth", "status", "--format", "table"}, "")
+	if err != nil || strings.Count(out, "未知（Gateway 未返回）") != 3 {
+		t.Fatalf("缺失授权应展示未知: %s %v", out, err)
+	}
+}
+
 func runAuth(args []string, input string) (string, string, error) {
 	root := cmd.NewRootCmd()
 	out, diagnostic := new(bytes.Buffer), new(bytes.Buffer)
@@ -48,7 +66,7 @@ func TestAuthLoginStatusFailureAndLogout(t *testing.T) {
 			_, _ = w.Write([]byte(`{"success":false,"error":{"code":"CREDENTIAL_REVOKED","message":"sentinel-invalid"}}`))
 			return
 		}
-		_, _ = w.Write([]byte(`{"success":true,"data":{"account_id":1},"request_id":"test"}`))
+		_, _ = w.Write([]byte(`{"success":true,"data":{"account_id":1,"grants":{"product.purchase.create":true,"support.ticket.create":false,"order.secret.read":true}},"request_id":"test"}`))
 	}))
 	defer srv.Close()
 	out, diagnostic, err := runAuth([]string{"auth", "login", "--gateway-url", srv.URL, "--token-stdin", "--format", "json"}, "sentinel-valid\n")
@@ -71,6 +89,9 @@ func TestAuthLoginStatusFailureAndLogout(t *testing.T) {
 	out, _, err = runAuth([]string{"auth", "status", "--format", "json"}, "")
 	if err != nil || !strings.Contains(out, `"status": "valid"`) {
 		t.Fatal("有效状态错误")
+	}
+	if !strings.Contains(out, `"product.purchase.create": true`) || !strings.Contains(out, `"order.secret.read": true`) {
+		t.Fatal("有效状态应展示 grant")
 	}
 	count := requests
 	_, _, _ = runAuth([]string{"account", "summary", "--print-paths"}, "")

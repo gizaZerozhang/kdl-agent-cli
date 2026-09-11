@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -52,25 +53,37 @@ func readLoginToken(cmd *cobra.Command, stdin bool) (string, error) {
 }
 
 // verifyCredential 只消费验证结果，不输出账户数据或服务端原始错误。
-func verifyCredential(cmd *cobra.Command, cfg config.Resolved) (string, error) {
+func verifyCredential(cmd *cobra.Command, cfg config.Resolved) (string, map[string]bool, error) {
 	c, err := client.New(cfg)
 	if err != nil {
-		return "error", err
+		return "error", nil, err
 	}
 	ctx, cancel := context.WithTimeout(cmd.Context(), 15*time.Second)
 	defer cancel()
-	_, err = c.Get(ctx, "/v1/account/summary", nil)
+	resp, err := c.Get(ctx, "/v1/account/summary", nil)
 	if err == nil {
-		return "valid", nil
+		var payload struct {
+			Grants map[string]bool `json:"grants"`
+		}
+		if err := json.Unmarshal(resp.Data, &payload); err != nil {
+			return "error", nil, errors.New("Gateway 返回的授权状态格式无效")
+		}
+		grants := map[string]bool{}
+		for _, grant := range []string{"product.purchase.create", "support.ticket.create", "order.secret.read"} {
+			if enabled, ok := payload.Grants[grant]; ok {
+				grants[grant] = enabled
+			}
+		}
+		return "valid", grants, nil
 	}
 	var apiErr *client.APIError
 	if errors.As(err, &apiErr) {
 		if apiErr.StatusCode == 401 || apiErr.Code == "AUTH_REQUIRED" || apiErr.Code == "CREDENTIAL_REVOKED" || apiErr.Code == "CREDENTIAL_EXPIRED" {
-			return "invalid", errors.New("Agent 凭证无效、过期或已撤销；请在会员中心检查后重新执行 auth login")
+			return "invalid", nil, errors.New("Agent 凭证无效、过期或已撤销；请在会员中心检查后重新执行 auth login")
 		}
-		return "error", errors.New("Gateway 拒绝验证或服务暂不可用；请检查授权、服务状态，限流时稍后重试")
+		return "error", nil, errors.New("Gateway 拒绝验证或服务暂不可用；请检查授权、服务状态，限流时稍后重试")
 	}
-	return "unreachable", errors.New("无法完成 Gateway 验证；请检查地址、网络、TLS 及服务响应后重试")
+	return "unreachable", nil, errors.New("无法完成 Gateway 验证；请检查地址、网络、TLS 及服务响应后重试")
 }
 
 func newAuthLoginCmd() *cobra.Command {
@@ -97,7 +110,7 @@ func newAuthLoginCmd() *cobra.Command {
 			if !globalQuiet {
 				fmt.Fprintf(f.Out.Stderr, "正在验证 Gateway: %s\n", cfg.GatewayURL)
 			}
-			if _, err := verifyCredential(cmd, cfg); err != nil {
+			if _, _, err := verifyCredential(cmd, cfg); err != nil {
 				return fail(f, err, cmdutil.ExitRuntime)
 			}
 			if err := config.SaveLogin(cfg.ConfigPath, cfg.GatewayURL, cfg.Token); err != nil {
@@ -128,21 +141,31 @@ func newAuthStatusCmd() *cobra.Command {
 				return fail(f, err, cmdutil.ExitConfig)
 			}
 			status, code := "unconfigured", cmdutil.ExitConfig
+			grants := map[string]bool{}
 			var verifyErr error
 			if cfg.Token != "" {
 				if !globalQuiet {
 					fmt.Fprintf(f.Out.Stderr, "正在验证 Gateway: %s\n", cfg.GatewayURL)
 				}
-				status, verifyErr = verifyCredential(cmd, cfg)
+				status, grants, verifyErr = verifyCredential(cmd, cfg)
 				code = cmdutil.ExitRuntime
 			}
 			if strings.EqualFold(globalFormat, "json") {
-				if err := writeJSON(f.Out, map[string]any{"config_path": cfg.ConfigPath, "credentials_path": cfg.CredentialsPath, "gateway_url": cfg.GatewayURL, "config_source": cfg.ConfigSource, "token_source": cfg.TokenSource, "token_configured": cfg.Token != "", "status": status}); err != nil {
+				if err := writeJSON(f.Out, map[string]any{"config_path": cfg.ConfigPath, "credentials_path": cfg.CredentialsPath, "gateway_url": cfg.GatewayURL, "config_source": cfg.ConfigSource, "token_source": cfg.TokenSource, "token_configured": cfg.Token != "", "status": status, "grants": grants}); err != nil {
 					return err
 				}
 			} else {
 				labels := map[string]string{"unconfigured": "未配置", "valid": "服务端验证有效", "invalid": "凭证无效", "unreachable": "无法完成远端验证", "error": "服务端验证失败"}
 				fmt.Fprintf(f.Out.Stdout, "Gateway: %s\n配置文件: %s\n凭证文件: %s\n凭证来源: %s\n状态: %s\n", cfg.GatewayURL, cfg.ConfigPath, cfg.CredentialsPath, cfg.TokenSource, labels[status])
+				if status == "valid" {
+					for _, grant := range []string{"product.purchase.create", "support.ticket.create", "order.secret.read"} {
+						if enabled, ok := grants[grant]; ok {
+							fmt.Fprintf(f.Out.Stdout, "授权 %s: %t\n", grant, enabled)
+						} else {
+							fmt.Fprintf(f.Out.Stdout, "授权 %s: 未知（Gateway 未返回）\n", grant)
+						}
+					}
+				}
 			}
 			if status == "valid" {
 				return nil

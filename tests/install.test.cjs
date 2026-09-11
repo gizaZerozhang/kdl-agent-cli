@@ -129,11 +129,24 @@ test('下载失败和版本不符保留旧程序', async t => {
   await assert.rejects(ensureInstalled({ ...f.options, verify() { throw new Error('version mismatch'); } }), /version mismatch/);
   assert.equal(fs.readFileSync(binary, 'utf8'), 'old-binary');
 });
-test('并发安装失败关闭且不删除他人的锁', async t => {
+test('并发安装等待后复用同一二进制，仅下载一次', async t => {
+  const f = await fixture(t);
+  let downloads = 0;
+  const options = { ...f.options, lockPollMs: 5, async fetchFile(url, destination) {
+    downloads++;
+    await new Promise(resolve => setTimeout(resolve, 30));
+    return f.options.fetchFile(url, destination);
+  } };
+  const results = await Promise.all([ensureInstalled(options), ensureInstalled(options), ensureInstalled(options)]);
+  assert.equal(new Set(results).size, 1);
+  assert.equal(downloads, 1);
+  assert.equal(fs.existsSync(path.join(f.packageRoot, '.native/.lock')), false);
+});
+test('并发安装超时失败关闭且不删除他人的锁', async t => {
   const f = await fixture(t);
   const lock = path.join(f.packageRoot, '.native/.lock');
   fs.mkdirSync(lock, { recursive: true });
-  await assert.rejects(ensureInstalled(f.options), /另一个安装/);
+  await assert.rejects(ensureInstalled({ ...f.options, lockWaitMs: 0 }), /另一个安装/);
   assert.equal(fs.existsSync(lock), true);
 });
 test('安装目录拒绝符号链接', async t => {

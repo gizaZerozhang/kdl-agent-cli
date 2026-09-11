@@ -108,7 +108,7 @@ curl --fail-with-body 'https://agent-gateway.kdlapi.com/v1/account/funds' \
 | `GET /v1/orders/{order_id}` | 代理订单详情 | 无 | 不使用 |
 | `GET /v1/orders/{order_id}/stats` | 最近 24 小时错误与风控摘要 | 无 | 不使用 |
 | `GET /v1/orders/{order_id}/guide` | 接入指引与配置模板 | 无 | 不使用 |
-| `GET /v1/products` | 产品目录 | 无 | 不使用 |
+| `GET /v1/products` | Agent 对外开放产品目录 | 无 | 不使用 |
 | `GET /v1/products/trial-eligibility` | 当前账户试用资格 | 无 | 不使用 |
 | `GET /v1/products/{product_type}/spec` | 动态产品规格 | 无 | 不使用 |
 | `POST /v1/products/quote` | 获取报价 | 无 | 不使用 |
@@ -117,7 +117,7 @@ curl --fail-with-body 'https://agent-gateway.kdlapi.com/v1/account/funds' \
 | `POST /v1/tickets` | 创建真实工单 | `support.ticket.create` | 必填 |
 | `POST /v1/orders/{order_id}/secret` | 获取订单密钥 | `order.secret.read` | 不使用 |
 
-“无”仅表示无需额外敏感 grant，不表示匿名可调用。下载[Agent Gateway API 的 OpenAPI 规范文件](https://github.com/gizaZerozhang/kdl-agent-cli/releases/download/v0.1.0-beta.3/openapi.yaml)。这里的 OpenAPI 指接口描述标准，文件描述的是本文的 Gateway API，不是原有订单 OpenAPI 产品的完整接口列表。通过[版本记录](https://github.com/gizaZerozhang/kdl-agent-cli/releases/tag/v0.1.0-beta.3)获取配套版本及兼容要求。
+“无”仅表示无需额外敏感 grant，不表示匿名可调用。下载[Agent Gateway API 的 OpenAPI 规范文件](https://github.com/gizaZerozhang/kdl-agent-cli/releases/download/v0.1.0-beta.4/openapi.yaml)。这里的 OpenAPI 指接口描述标准，文件描述的是本文的 Gateway API，不是原有订单 OpenAPI 产品的完整接口列表。通过[版本记录](https://github.com/gizaZerozhang/kdl-agent-cli/releases/tag/v0.1.0-beta.4)获取配套版本及兼容要求。
 
 本指南的稳定原文地址为 `https://stg3.kuaidaili.com/kdl-agent/docs/api-guide.md`，同版本快照为 webhp `/kdl-agent/releases/{version}/docs/api-guide.md`。所有指南提供 Markdown 原文，稳定原文跟随推荐版本；接入旧版本时使用其配套快照和 OpenAPI。webhp 文档地址不是 Gateway API 基址。
 
@@ -150,7 +150,7 @@ curl --fail-with-body 'https://agent-gateway.kdlapi.com/v1/account/funds' \
 
 `GET /v1/orders` 在公共分页参数之外支持可选 `status`：`active`、`closed`、`expired`、`cancelled`。该查询不包含待付款订单。
 
-`data.items[]` 包含 `order_id`、`product_type`、`status`、`api_domain`，可选 `expires_at`、`auto_renew`；`next_cursor` 表示下一页。
+`data.items[]` 包含 `order_id`、`product_type`、`product_name`、`status`、`api_domain`，可选 `expires_at`、`auto_renew`；`next_cursor` 表示下一页。`product_type` 是程序使用的产品编码，`product_name` 是面向客户的产品中文名称。
 
 `GET /v1/orders/{order_id}` 返回对应字段及：
 
@@ -163,7 +163,7 @@ curl --fail-with-body 'https://agent-gateway.kdlapi.com/v1/account/funds' \
 
 ### 最近 24 小时摘要
 
-`GET /v1/orders/{order_id}/stats` 返回 `order_id`、`product_type`、`period_start`、`period_end`、`generated_at`、`error_breakdown`、`risk_breakdown`、`member_center_stats_url`。
+`GET /v1/orders/{order_id}/stats` 返回 `order_id`、`product_type`、`product_name`、`period_start`、`period_end`、`generated_at`、`error_breakdown`、`risk_breakdown`、`member_center_stats_url`。`product_name` 是面向客户的产品中文名称。
 
 分类项包含 `category`、`count`、`ratio`、`hint`。周期为最近 24 小时，按返回时间及 Asia/Shanghai 业务语义解释；不提供任意历史区间、请求总量时间序列、客户端 IP 或访问域名。产品不支持时返回 `UNSUPPORTED`，按返回的官网入口继续查看，不将失败当成“没有错误”。
 

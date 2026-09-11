@@ -874,6 +874,21 @@ components:
             $ref: '#/components/schemas/AccountRestriction'
         order_counts:
           $ref: '#/components/schemas/AccountOrderCounts'
+        grants:
+          type: object
+          description: Gateway 补充的当前凭证三项授权状态；内部摘要和旧版本可不返回，缺失表示未知
+          required:
+          - order.secret.read
+          - product.purchase.create
+          - support.ticket.create
+          properties:
+            order.secret.read:
+              type: boolean
+            product.purchase.create:
+              type: boolean
+            support.ticket.create:
+              type: boolean
+          additionalProperties: false
         risk_notice:
           type:
           - string
@@ -1321,6 +1336,7 @@ components:
       required:
       - order_id
       - product_type
+      - product_name
       - status
       - api_domain
       - specification
@@ -1330,6 +1346,10 @@ components:
           type: string
         product_type:
           type: string
+        product_name:
+          type: string
+          minLength: 1
+          description: 产品中文名称，来源于产品目录的 name
         status:
           type: string
         api_domain:
@@ -1519,6 +1539,7 @@ components:
       - period_end
       - generated_at
       - product_type
+      - product_name
       - error_breakdown
       - risk_breakdown
       - member_center_stats_url
@@ -1544,6 +1565,10 @@ components:
           - kps-lrps
           - fps
           - sfps
+        product_name:
+          type: string
+          minLength: 1
+          description: 产品中文名称，来源于产品目录的 name
         error_breakdown:
           type: array
           items:
@@ -1560,6 +1585,7 @@ components:
       required:
       - order_id
       - product_type
+      - product_name
       - status
       - api_domain
       properties:
@@ -1567,6 +1593,10 @@ components:
           type: string
         product_type:
           type: string
+        product_name:
+          type: string
+          minLength: 1
+          description: 产品中文名称，来源于产品目录的 name
         status:
           type: string
         api_domain:
@@ -1765,6 +1795,7 @@ components:
       additionalProperties: false
     ProductSummary:
       type: object
+      description: 仅返回已确认对 Agent 对外开放的产品；product_type 为程序编码，name 为客户可读的中文产品名称
       required:
       - product_type
       - name

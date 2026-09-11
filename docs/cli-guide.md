@@ -224,7 +224,7 @@ Windows 对应 `%USERPROFILE%\.kdl\`。macOS/Linux 目录权限为 `0700`、凭�
 
 自动化场景可以通过 `KDL_AGENT_GATEWAY_URL`、`KDL_AGENT_TOKEN` 注入地址和凭证，当前运行的注入覆盖本地配置且不自动落盘。由运行环境管理秘密值，不通过聊天生成含真实凭证的脚本。切换 Gateway 时应使用该地址对应的凭证，不自动复用旧地址凭证。
 
-普通客户无需设置自定义配置文件。需要时，普通配置路径优先级为 `--config` > `KDL_AGENT_CONFIG` > 家目录 `.kdl/config.toml`；显式相对路径相对当前工作目录，凭证仍固定在家目录。`auth status --format json` 区分 `unconfigured`、`valid`、`invalid`、`unreachable` 与 `error`，只有 `valid` 表示远端验证有效。
+普通客户无需设置自定义配置文件。需要时，普通配置路径优先级为 `--config` > `KDL_AGENT_CONFIG` > 家目录 `.kdl/config.toml`；显式相对路径相对当前工作目录，凭证仍固定在家目录。`auth status --format json` 区分 `unconfigured`、`valid`、`invalid`、`unreachable` 与 `error`，只有 `valid` 表示远端验证有效；验证成功时展示 Gateway 返回的三项 grant 状态，旧服务未返回的项表示未知，不等于未授权。
 
 ### 退出、撤销与密钥重置
 
@@ -250,7 +250,7 @@ kdl-agent --version
 升级或回退时，将下方版本号替换为[版本记录](https://github.com/gizaZerozhang/kdl-agent-cli/releases)中的目标版本，同步安装 CLI 和 Skill（示例目标为 Codex）：
 
 ```bash
-npx --yes @zerozhang-giza/kdl-agent@0.1.0-beta.3 install --yes --agent codex --no-login
+npx --yes @zerozhang-giza/kdl-agent@0.1.0-beta.4 install --yes --agent codex --no-login
 ```
 
 升级保留登录配置；Skill 安装失败时重试同一命令。完成后核对版本、刷新 Agent 会话，再执行一次账户查询。发布新版不会静默替换本机安装。

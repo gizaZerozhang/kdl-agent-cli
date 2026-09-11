@@ -1,6 +1,6 @@
 {
   "name": "@zerozhang-giza/kdl-agent",
-  "version": "0.1.0-beta.3",
+  "version": "0.1.0-beta.4",
   "description": "快代理 CLI：账户与订单查询、授权操作及代理便利命令",
   "license": "MIT",
   "engines": {

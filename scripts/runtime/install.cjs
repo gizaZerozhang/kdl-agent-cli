@@ -12,6 +12,8 @@ const yauzl = require('yauzl');
 
 const ROOT = path.resolve(__dirname, '../..');
 const MAX_BYTES = 256 * 1024 * 1024;
+const LOCK_WAIT_MS = 30000;
+const LOCK_POLL_MS = 250;
 const HOSTS = new Set(['github.com', 'release-assets.githubusercontent.com', 'objects.githubusercontent.com']);
 const TARGETS = new Set(['darwin-arm64', 'darwin-amd64', 'linux-arm64', 'linux-amd64', 'windows-amd64']);
 
@@ -166,7 +168,15 @@ function verifyBinary(file, version, commit) {
   if (result.status !== 0 || !output?.startsWith(`kdl-agent ${version} (commit `) || (commit && output !== `kdl-agent ${version} (commit ${commit})`)) throw new Error('下载程序无法运行或版本、来源不匹配');
 }
 
-async function ensureInstalled({ root = ROOT, fetchFile = download, platform = process.platform, arch = process.arch, verify = verifyBinary } = {}) {
+async function ensureInstalled({
+  root = ROOT,
+  fetchFile = download,
+  platform = process.platform,
+  arch = process.arch,
+  verify = verifyBinary,
+  lockWaitMs = LOCK_WAIT_MS,
+  lockPollMs = LOCK_POLL_MS,
+} = {}) {
   const { pkg, repository } = config(root);
   const release = JSON.parse(fs.readFileSync(path.join(root, 'release.json'), 'utf8'));
   if (release.version !== pkg.version || release.repository !== repository || !/^[a-f0-9]{40}$/.test(release.commit) || release.dirty !== false) throw new Error('发行元数据与 npm 包不一致');
@@ -177,9 +187,18 @@ async function ensureInstalled({ root = ROOT, fetchFile = download, platform = p
   fs.mkdirSync(directory, { recursive: true });
   if (fs.lstatSync(directory).isSymbolicLink()) throw new Error('安装目录不能是符号链接');
   const lock = path.join(directory, '.lock');
-  try { fs.mkdirSync(lock); } catch (error) {
-    if (error.code === 'EEXIST') throw new Error('另一个安装正在进行；确认没有安装进程后可删除 .native/.lock 重试');
-    throw error;
+  const started = Date.now();
+  while (true) {
+    try {
+      fs.mkdirSync(lock);
+      break;
+    } catch (error) {
+      if (error.code !== 'EEXIST') throw error;
+      if (Date.now() - started >= lockWaitMs) {
+        throw new Error('另一个安装正在进行；确认没有安装进程后可删除 .native/.lock 重试');
+      }
+      await new Promise(resolve => setTimeout(resolve, lockPollMs));
+    }
   }
   const destination = path.join(directory, artifact.binary);
   const old = destination + '.old';

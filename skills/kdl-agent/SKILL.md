@@ -5,11 +5,11 @@ description: 在用户需要查询快代理账户、余额、代理订单、接�
 
 # 快代理 CLI
 
-本 Skill 使用客户侧 `kdl-agent` 操作快代理已有服务。适用版本为 0.1.0-beta.3，属于预发行验证版本；最低系统与真实业务验收状态以同版本 Release 说明为准。
+本 Skill 使用客户侧 `kdl-agent` 操作快代理已有服务。适用版本为 0.1.0-beta.4，属于预发行验证版本；最低系统与真实业务验收状态以同版本 Release 说明为准。
 
 ## 使用前
 
-1. 检查 `kdl-agent --version`、任务相关命令的 `--help`，核对官方安装来源提供的适用版本。CLI 不存在时读取 `https://github.com/gizaZerozhang/kdl-agent-cli/blob/v0.1.0-beta.3/docs/install.md` 的同版本说明，使用其中已发布的 npm 包及固定版本；资源不可用或平台不支持时报告缺项，不猜测命令。
+1. 检查 `kdl-agent --version`、任务相关命令的 `--help`，核对官方安装来源提供的适用版本。CLI 不存在时读取 `https://github.com/gizaZerozhang/kdl-agent-cli/blob/v0.1.0-beta.4/docs/install.md` 的同版本说明，使用其中已发布的 npm 包及固定版本；资源不可用或平台不支持时报告缺项，不猜测命令。
 2. 使用 `kdl-agent auth status` 查看非敏感状态，再根据用户任务发起一次只读查询。状态仅显示“已配置”时不能报告远端验证通过。
 3. 需要登录时让用户在本地终端执行隐藏输入的 `auth login`。若该版本要求 `--token` 或把凭证写入项目目录，停止旧流程，使用与官方指南匹配的版本；不通过读取旧配置恢复凭证。
 4. 日常调用使用 `--format json`。一次查询的完成依据是命令退出码及实际数据，不以命令已启动或文件已创建代替。
