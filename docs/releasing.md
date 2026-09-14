@@ -4,10 +4,11 @@
 
 ## 稳定发行准备验收（2026-09-14）
 
-- 实现 `4a95c1d`、工作流 `da9cb1f` 已合入 main；[CI](https://github.com/kuaidaili/kdl-agent-cli/actions/runs/34822987091) 的 macOS、Linux、Windows 源码回归及候选构建全部通过。npm 40 项、签名验证 Python 4 项、Go race/vet、GoReleaser 配置与工作流语法检查通过。
-- Windows Server runner 原生验证当前用户 DACL、禁止父目录权限继承、登录/更新/退出和配置替换失败后的凭证恢复；最低 Windows 11 与 macOS 12、Ubuntu 22.04 目标机器仍需独立验收。
-- Apple 尚未开通，只有接入与模拟负例，没有实签/公证证据；公司 OIDC 首次实发、最低系统、生产业务和入口验收仍待完成。稳定发行缺任何必要记录或配置即停止。
-- 本轮未创建新 tag/npm 版本，既有 beta.5 附件保留。官网及文档的 stg3 链接留到发布前最后切换。
+- 包版本、锁文件、当前安装说明、API 资源链接与配套 Skill 已统一为 `0.1.0`，尚未创建稳定 tag、Release 或 npm 版本。既有 beta.5 产物保留。
+- 当前门禁仅保留 `business-e2e`、`production-operations`、`public-entry`；须有真实证据后生成同版本验收记录。客户端人工平台、最低系统与 Apple 签名公证门已取消；macOS 暂未签名，保留自动烟测、Windows 权限回归和 HTTPS/SHA256/来源校验。
+- 调整门禁后的 [CI](https://github.com/kuaidaili/kdl-agent-cli/actions/runs/34825090319) 三系统测试与构建通过；版本同步后的验证另按当前工作区执行，不复用旧候选作为最终发行包。
+- 0.1.0 版本同步后 npm 40 项回归通过；beta 用例固定独立版本，稳定版 latest/provenance 回归通过。
+- 最终固定候选、公司 Trusted Publisher 实际 OIDC 发布及 provenance、匿名安装/升级仍待完成。官网及文档 stg3 链接留到发布前最后切换。
 
 ## 公司 beta.5 发行记录
 
@@ -23,7 +24,7 @@
 - tag 保护与 `github-release`、`npm-production` 环境审批随仓库转移保留；当前获公司仓库 Admin 的维护者继续审批。
 - 首次创建公司包需公司 npm 账号完成本人认证，发布已有固定候选；随后把 Trusted Publisher 绑定到 `kuaidaili/kdl-agent-cli`、`publish-npm.yml`、`npm-production`，不能沿用旧 owner 的绑定。
 - 新包首次手工发布不声明 OIDC provenance；后续通过新绑定实际发布后再记录验证结果。旧个人包只有在新包安装验收通过后才添加迁移提示。
-- 新包仍使用 beta；npm 首次建包可能自动附加 latest，实际标签须回读，不能把 latest 当作稳定验收证据。
+- 稳定目标为 0.1.0，发行使用 latest；beta 历史及标签保留，发布后回读 registry，不能把标签当作验收证据。
 - 历史记录中的个人仓库地址保留用于追溯；旧地址重定向、旧二进制下载和旧 Skill tag 读取须实测。
 
 ## 首次 beta 发布记录

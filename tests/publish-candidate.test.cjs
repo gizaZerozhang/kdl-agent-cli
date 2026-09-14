@@ -13,8 +13,8 @@ test('重复发布一致时不执行 npm，不一致时失败', async () => {
 });
 test('新发布校验远端候选，命令保留 beta/provenance', async () => {
   let reads = 0;
-  await main(file, { read: async () => ++reads === 1 ? null : integrity, run(name, args) {
-    assert.equal(name, 'npm'); assert.ok(args.includes('--provenance')); assert.ok(args.includes('beta'));
+  await main(file, { version: '0.1.0-beta.5', read: async () => ++reads === 1 ? null : integrity, run(name, args) {
+    assert.equal(name, 'npm'); assert.ok(args.includes('--provenance')); assert.equal(args[args.indexOf('--tag') + 1], 'beta');
     return { status: 0 };
   } });
   assert.equal(reads, 2);

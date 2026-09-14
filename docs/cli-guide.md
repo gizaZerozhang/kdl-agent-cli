@@ -250,10 +250,12 @@ kdl-agent --version
 升级或回退时，将下方版本号替换为[版本记录](https://github.com/kuaidaili/kdl-agent-cli/releases)中的目标版本，同步安装 CLI 和 Skill（示例目标为 Codex）：
 
 ```bash
-npx --yes @kuaidaili/kdl-agent@0.1.0-beta.5 install --yes --agent codex --no-login
+npx --yes @kuaidaili/kdl-agent@0.1.0 install --yes --agent codex --no-login
 ```
 
 升级保留登录配置；Skill 安装失败时重试同一命令。完成后核对版本、刷新 Agent 会话，再执行一次账户查询。发布新版不会静默替换本机安装。
+
+公司包从 beta.5 开始；迁移个人包或回退至 beta.4 及更早版本时，按[迁移与恢复步骤](https://github.com/kuaidaili/kdl-agent-cli/blob/v0.1.0/docs/install.md#从个人包迁移)切换包名并同步 Skill。
 
 后续支持 `update check` 的版本会由 Skill 在任务开始时检查新版，提示并经你确认后同步升级。旧版需要先按上述流程升级一次。
 

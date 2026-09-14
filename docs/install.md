@@ -1,6 +1,6 @@
 # 快代理 CLI 安装指南
 
-适用版本：`0.1.0-beta.5`。显式指定版本或 `@beta`；`latest` 不作为当前推荐入口，发行结果以同版本 Release 为准。
+适用版本：`0.1.0`（发布准备中）。以下命令须在同版本 GitHub Release 与 npm 包公开后使用；稳定版使用 `latest`，推荐精确版本便于复现。
 
 ## 环境
 
@@ -15,13 +15,13 @@
 使用 npm 安装向导。人类交互模式依次完成 CLI、同版本 Skill、隐藏输入登录、远端状态与首次只读查询；Skill 安装时选择实际使用的 Agent。
 
 ```bash
-npx @kuaidaili/kdl-agent@0.1.0-beta.5 install
+npx @kuaidaili/kdl-agent@0.1.0 install
 ```
 
 Agent 协助安装时指定目标工具，并把凭证输入留给用户本地终端：
 
 ```bash
-npx @kuaidaili/kdl-agent@0.1.0-beta.5 install --yes --agent codex --no-login
+npx @kuaidaili/kdl-agent@0.1.0 install --yes --agent codex --no-login
 ```
 
 `--agent` 使用 skills 工具支持的标识，例如 `codex`、`cursor`、`claude-code`。未经实测的工具不承诺兼容。只安装 CLI 可显式 `--no-skills`。仅安装成功不代表业务接入完成。
@@ -40,15 +40,15 @@ kdl-agent account summary --format json
 
 ## 独立入口
 
-只安装 npm CLI：`npm install -g @kuaidaili/kdl-agent@0.1.0-beta.5`。
+只安装 npm CLI：`npm install -g @kuaidaili/kdl-agent@0.1.0`。
 
 Skill 可以单独安装；下面示例仅选 Codex，可换为实际工具：
 
 ```bash
-npx --yes skills@1.5.25 add https://github.com/kuaidaili/kdl-agent-cli/tree/v0.1.0-beta.5/skills/kdl-agent --global --skill kdl-agent --agent codex --yes
+npx --yes skills@1.5.25 add https://github.com/kuaidaili/kdl-agent-cli/tree/v0.1.0/skills/kdl-agent --global --skill kdl-agent --agent codex --yes
 ```
 
-无 Node.js 的环境可下载 [GitHub Release](https://github.com/kuaidaili/kdl-agent-cli/releases/tag/v0.1.0-beta.5) 的对应原生包，核对 SHA256SUMS 后解压并放入用户 PATH；执行文件为 `kdl-agent` 或 `kdl-agent.exe`。
+无 Node.js 的环境可下载 [GitHub Release](https://github.com/kuaidaili/kdl-agent-cli/releases/tag/v0.1.0) 的对应原生包，核对 SHA256SUMS 后解压并放入用户 PATH；执行文件为 `kdl-agent` 或 `kdl-agent.exe`。
 
 ## 升级、回退与卸载
 
@@ -66,7 +66,7 @@ npx --yes skills@1.5.25 add https://github.com/kuaidaili/kdl-agent-cli/tree/v0.1
 
 ```bash
 npm uninstall -g @zerozhang-giza/kdl-agent
-npx --yes @kuaidaili/kdl-agent@0.1.0-beta.5 install --yes --agent codex --no-login
+npx --yes @kuaidaili/kdl-agent@0.1.0 install --yes --agent codex --no-login
 kdl-agent --version
 kdl-agent auth status
 ```

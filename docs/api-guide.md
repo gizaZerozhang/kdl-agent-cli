@@ -117,9 +117,9 @@ curl --fail-with-body 'https://agent-gateway.kdlapi.com/v1/account/funds' \
 | `POST /v1/tickets` | 创建真实工单 | `support.ticket.create` | 必填 |
 | `POST /v1/orders/{order_id}/secret` | 获取订单密钥 | `order.secret.read` | 不使用 |
 
-“无”仅表示无需额外敏感 grant，不表示匿名可调用。下载[Agent Gateway API 的 OpenAPI 规范文件](https://github.com/kuaidaili/kdl-agent-cli/releases/download/v0.1.0-beta.5/openapi.yaml)。这里的 OpenAPI 指接口描述标准，文件描述的是本文的 Gateway API，不是原有订单 OpenAPI 产品的完整接口列表。通过[版本记录](https://github.com/kuaidaili/kdl-agent-cli/releases/tag/v0.1.0-beta.5)获取配套版本及兼容要求。
+“无”仅表示无需额外敏感 grant，不表示匿名可调用。下载[Agent Gateway API 的 OpenAPI 规范文件](https://github.com/kuaidaili/kdl-agent-cli/releases/download/v0.1.0/openapi.yaml)。这里的 OpenAPI 指接口描述标准，文件描述的是本文的 Gateway API，不是原有订单 OpenAPI 产品的完整接口列表。通过[版本记录](https://github.com/kuaidaili/kdl-agent-cli/releases/tag/v0.1.0)获取配套版本及兼容要求。
 
-本指南的稳定原文地址为 `https://stg3.kuaidaili.com/kdl-agent/docs/api-guide.md`，同版本快照为 webhp `/kdl-agent/releases/{version}/docs/api-guide.md`。所有指南提供 Markdown 原文，稳定原文跟随推荐版本；接入旧版本时使用其配套快照和 OpenAPI。webhp 文档地址不是 Gateway API 基址。
+本指南的稳定原文地址为 `https://stg3.kuaidaili.com/kdl-agent/docs/api-guide.md`，同版本快照见 GitHub 对应 tag 下的 `docs/api-guide.md`，例如 [0.1.0 快照](https://github.com/kuaidaili/kdl-agent-cli/blob/v0.1.0/docs/api-guide.md)。所有指南提供 Markdown 原文，稳定原文跟随推荐版本；接入旧版本时使用其配套快照和 OpenAPI。webhp 文档地址不是 Gateway API 基址。
 
 ## 账户与站内信
 
@@ -195,6 +195,10 @@ curl --fail-with-body 'https://agent-gateway.kdlapi.com/v1/account/funds' \
 
 按规格中字段类型、可选值、依赖及限制构造配置。规格和报价随业务变化，不在客户端硬编码全部产品参数、价格或库存。
 
+字段可能提供 `default`、`minimum`、`maximum`。`options` 默认是封闭选项；仅当 `allow_custom=true` 时表示推荐数值，仍须满足范围及 `configuration_rules`。缺省参数由服务端按当前选择补齐，条件默认值以报价响应为准。
+
+静态住宅 `areas_select` 必须使用规格列出的当前可售编码，格式为 `地区编码:数量|地区编码:数量`；零售商品编码不能用国家或旧地区编码替代。包段数量须符合当前地区档位。
+
 `POST /v1/products/quote` 请求体：
 
 | 字段 | 类型 | 必填 | 来源 |
@@ -214,6 +218,8 @@ curl --fail-with-body 'https://agent-gateway.kdlapi.com/v1/account/funds' \
 ```
 
 返回 `quote_id`、`product_type`、`spec_version`、`configuration`、`currency`、`total_amount`、`line_items`、`expires_at`、`purchase_url`。报价是后续下单依据，不是订单，也不是支付成功通知。
+
+返回的 `configuration` 包含实际采用的缺省值，地区列表会统一格式。创建待付款订单时原样传入这份完整配置，不能继续使用报价前的简写配置；配置或版本变化时重新报价。
 
 ### 创建待付款订单
 
