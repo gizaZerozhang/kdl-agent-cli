@@ -75,11 +75,11 @@ async function fixture(t, platform = 'linux', arch = 'x64') {
     zip.end();
     await pipeline(zip.outputStream, fs.createWriteStream(archive));
   } else await tar.c({ file: archive, cwd: source, gzip: true }, [artifact.binary]);
-  fs.writeFileSync(path.join(packageRoot, 'package.json'), JSON.stringify({ version, repository: { url: 'git+https://github.com/gizaZerozhang/kdl-agent-cli.git' } }));
-  fs.writeFileSync(path.join(packageRoot, 'release.json'), JSON.stringify({ version, repository: 'gizaZerozhang/kdl-agent-cli', commit: 'a'.repeat(40), dirty: false }));
+  fs.writeFileSync(path.join(packageRoot, 'package.json'), JSON.stringify({ version, repository: { url: 'git+https://github.com/kuaidaili/kdl-agent-cli.git' } }));
+  fs.writeFileSync(path.join(packageRoot, 'release.json'), JSON.stringify({ version, repository: 'kuaidaili/kdl-agent-cli', commit: 'a'.repeat(40), dirty: false }));
   fs.writeFileSync(path.join(packageRoot, 'SHA256SUMS'), `${await hashFile(archive)}  ${artifact.name}\n`);
   const options = { root: packageRoot, platform, arch, verify(file) { assert.equal(fs.readFileSync(file, 'utf8'), 'candidate-binary'); }, async fetchFile(url, destination) {
-    assert.equal(url, `https://github.com/gizaZerozhang/kdl-agent-cli/releases/download/v${version}/${artifact.name}`);
+    assert.equal(url, `https://github.com/kuaidaili/kdl-agent-cli/releases/download/v${version}/${artifact.name}`);
     fs.copyFileSync(archive, destination);
   } };
   return { root, source, packageRoot, archive, artifact, options };

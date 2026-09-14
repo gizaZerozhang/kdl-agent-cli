@@ -1,6 +1,6 @@
 # 快代理 CLI 安装指南
 
-适用版本：`0.1.0-beta.4`。显式指定版本或 `@beta`；`latest` 不作为当前推荐入口，发行结果以同版本 Release 为准。
+适用版本：`0.1.0-beta.5`。显式指定版本或 `@beta`；`latest` 不作为当前推荐入口，发行结果以同版本 Release 为准。
 
 ## 环境
 
@@ -15,13 +15,13 @@
 使用 npm 安装向导。人类交互模式依次完成 CLI、同版本 Skill、隐藏输入登录、远端状态与首次只读查询；Skill 安装时选择实际使用的 Agent。
 
 ```bash
-npx @zerozhang-giza/kdl-agent@0.1.0-beta.4 install
+npx @kuaidaili/kdl-agent@0.1.0-beta.5 install
 ```
 
 Agent 协助安装时指定目标工具，并把凭证输入留给用户本地终端：
 
 ```bash
-npx @zerozhang-giza/kdl-agent@0.1.0-beta.4 install --yes --agent codex --no-login
+npx @kuaidaili/kdl-agent@0.1.0-beta.5 install --yes --agent codex --no-login
 ```
 
 `--agent` 使用 skills 工具支持的标识，例如 `codex`、`cursor`、`claude-code`。未经实测的工具不承诺兼容。只安装 CLI 可显式 `--no-skills`。仅安装成功不代表业务接入完成。
@@ -40,24 +40,37 @@ kdl-agent account summary --format json
 
 ## 独立入口
 
-只安装 npm CLI：`npm install -g @zerozhang-giza/kdl-agent@0.1.0-beta.4`。
+只安装 npm CLI：`npm install -g @kuaidaili/kdl-agent@0.1.0-beta.5`。
 
 Skill 可以单独安装；下面示例仅选 Codex，可换为实际工具：
 
 ```bash
-npx --yes skills@1.5.25 add https://github.com/gizaZerozhang/kdl-agent-cli/tree/v0.1.0-beta.4/skills/kdl-agent --global --skill kdl-agent --agent codex --yes
+npx --yes skills@1.5.25 add https://github.com/kuaidaili/kdl-agent-cli/tree/v0.1.0-beta.5/skills/kdl-agent --global --skill kdl-agent --agent codex --yes
 ```
 
-无 Node.js 的环境可下载 [GitHub Release](https://github.com/gizaZerozhang/kdl-agent-cli/releases/tag/v0.1.0-beta.4) 的对应原生包，核对 SHA256SUMS 后解压并放入用户 PATH；执行文件为 `kdl-agent` 或 `kdl-agent.exe`。
+无 Node.js 的环境可下载 [GitHub Release](https://github.com/kuaidaili/kdl-agent-cli/releases/tag/v0.1.0-beta.5) 的对应原生包，核对 SHA256SUMS 后解压并放入用户 PATH；执行文件为 `kdl-agent` 或 `kdl-agent.exe`。
 
 ## 升级、回退与卸载
 
 - 使用目标精确版本重新运行向导，CLI 和 Skill 固定同版本；beta 使用显式版本或 npm beta 标签，稳定版发布后才提供 latest 入口。
 - 向导先下载校验再修改全局包，失败尝试恢复原 npm 版本。直接运行 npm install 的全局包替换由 npm 管理，失败后须按错误提示重新安装原版本；不要假定 npm 能原子回滚整个全局包。
 - CLI、Skill、登录分别报告状态，重新运行仅重试必要步骤。并发安装会拒绝；确认没有安装进程后才清理提示的锁目录。
-- 卸载：`npm uninstall -g @zerozhang-giza/kdl-agent`。`.kdl` 与 Skill 保留；本地退出使用 `auth logout`，服务端撤销在会员中心执行。
+- 卸载：`npm uninstall -g @kuaidaili/kdl-agent`。`.kdl` 与 Skill 保留；本地退出使用 `auth logout`，服务端撤销在会员中心执行。
 - npm 生命周期脚本被禁用时，第一次运行启动器仍会校验并补装二进制；缺少校验文件表示包不完整，应重新安装。
 
-## 账号迁移
+## 从个人包迁移
 
-当前使用个人账号发行。后续团队 scope 会使用新的 npm 包名；旧包提供迁移提示，用户显式卸载旧包并安装团队包，避免两个包争用 `kdl-agent` 命令。配置与凭证目录不变，迁移后核对版本及 auth status。
+当前 npm 包属于公司用户 `kuaidaili`，GitHub 属于公司组织 `kuaidaili`。本轮没有创建 npm Organization。个人包 `@zerozhang-giza/kdl-agent` 的旧版更新检查仍查询旧 scope，需要显式迁移。
+
+先记录 `kdl-agent --version` 和 `npm ls -g @zerozhang-giza/kdl-agent --depth=0`，停止正在执行的 CLI 任务。运行公司安装向导可先验证下载；若检测到旧全局包，向导停止并显示恢复命令，按提示执行：
+
+```bash
+npm uninstall -g @zerozhang-giza/kdl-agent
+npx --yes @kuaidaili/kdl-agent@0.1.0-beta.5 install --yes --agent codex --no-login
+kdl-agent --version
+kdl-agent auth status
+```
+
+按实际工具调整 `--agent`，刷新 Skill 后自行完成一次只读查询；未登录时由用户在本机 `auth login`。卸载不删除 `.kdl` 或 Skill，不需要因账号归属变化重建业务授权。不要使用 `--force` 覆盖共用命令。
+
+迁移失败且需要回退时，卸载公司包并按之前记录的精确旧版本重新运行旧包安装向导，恢复 CLI 与对应 Skill。Skill 单独失败时可重试同一公司版本向导，不必回退 CLI。历史 npm 包、tag 和 Release 保留。

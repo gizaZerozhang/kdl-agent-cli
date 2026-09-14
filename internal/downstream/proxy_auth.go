@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gizaZerozhang/kdl-agent-cli/internal/config"
+	"github.com/kuaidaili/kdl-agent-cli/internal/config"
 )
 
 // ProxyAuthorization 仅用于代理连接，credentials 为敏感的 Basic 编码值。

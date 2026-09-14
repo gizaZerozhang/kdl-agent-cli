@@ -7,6 +7,45 @@ const path = require('node:path');
 const { main } = require('../scripts/wizard.cjs');
 const { config } = require('../scripts/runtime/install.cjs');
 
+test('旧 scope 冲突停止全局修改并提供精确版本恢复入口', async t => {
+  const f = fixture(t);
+  const legacy = '@zerozhang-giza/kdl-agent';
+  const root = path.join(f.prefix, process.platform === 'win32' ? 'node_modules' : 'lib/node_modules', ...legacy.split('/'));
+  fs.mkdirSync(root, { recursive: true });
+  const original = JSON.stringify({ name: legacy, version: '0.1.0-beta.4' });
+  fs.writeFileSync(path.join(root, 'package.json'), original);
+  await assert.rejects(main(['--yes', '--agent', 'codex', '--no-login'], f.deps), error => {
+    assert.match(error.message, /npm uninstall -g @zerozhang-giza\/kdl-agent/);
+    assert.match(error.message, /npm install -g @zerozhang-giza\/kdl-agent@0.1.0-beta.4/);
+    return true;
+  });
+  assert.deepEqual(f.calls.map(call => call.args[0]), ['prefix']);
+  assert.equal(fs.readFileSync(path.join(root, 'package.json'), 'utf8'), original);
+  fs.rmSync(root, { recursive: true });
+  await main(['--yes', '--agent', 'codex', '--no-login'], f.deps);
+  assert.ok(f.calls.some(call => call.args.includes(`${config().pkg.name}@${config().pkg.version}`)));
+});
+
+test('旧包元数据损坏仍拒绝覆盖，不生成未经校验的恢复命令', async t => {
+  const f = fixture(t);
+  const root = path.join(f.prefix, process.platform === 'win32' ? 'node_modules' : 'lib/node_modules', '@zerozhang-giza', 'kdl-agent');
+  fs.mkdirSync(root, { recursive: true });
+  fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({ name: '@zerozhang-giza/kdl-agent', version: '1.0.0;echo unsafe' }));
+  await assert.rejects(main(['--yes', '--no-skills', '--no-login'], f.deps), error => {
+    assert.match(error.message, /先记录旧包的精确版本/);
+    assert.ok(!error.message.includes('unsafe'));
+    return true;
+  });
+  assert.equal(f.calls.length, 1);
+});
+
+test('更新帮助使用当前发行配置中的包名', async t => {
+  const f = fixture(t); f.deps.mode = 'update';
+  await main(['--help'], f.deps);
+  assert.ok(f.output.join('\n').includes(`${config().pkg.name}@<目标版本>`));
+  assert.equal(f.calls.length, 0);
+});
+
 test('取消升级不会下载或修改安装', async t => {
   const f = fixture(t);
   f.deps.mode = 'update'; f.deps.tty = true;

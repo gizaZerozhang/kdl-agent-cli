@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/gizaZerozhang/kdl-agent-cli/internal/client"
+	"github.com/kuaidaili/kdl-agent-cli/internal/client"
 )
 
 // OrderSecret 为 Gateway POST /v1/orders/{id}/secret 的稳定响应字段。

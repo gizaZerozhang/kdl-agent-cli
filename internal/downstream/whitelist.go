@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/gizaZerozhang/kdl-agent-cli/internal/config"
+	"github.com/kuaidaili/kdl-agent-cli/internal/config"
 )
 
 const envWhitelistMock = "KDL_AGENT_WHITELIST_MOCK"

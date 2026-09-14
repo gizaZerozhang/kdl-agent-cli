@@ -12,10 +12,10 @@ func TestUpdateCheck(t *testing.T) {
 		name, current, body, status string
 		code                        int
 	}{
-		{"numeric beta", "0.1.0-beta.2", `{"name":"@zerozhang-giza/kdl-agent","version":"0.1.0-beta.10"}`, "update_available", 200},
-		{"no downgrade", "0.1.0-beta.10", `{"name":"@zerozhang-giza/kdl-agent","version":"0.1.0-beta.2"}`, "up_to_date", 200},
+		{"numeric beta", "0.1.0-beta.2", `{"name":"@kuaidaili/kdl-agent","version":"0.1.0-beta.10"}`, "update_available", 200},
+		{"no downgrade", "0.1.0-beta.10", `{"name":"@kuaidaili/kdl-agent","version":"0.1.0-beta.2"}`, "up_to_date", 200},
 		{"offline", "0.1.0-beta.2", `{}`, "unavailable", 503},
-		{"injection", "0.1.0-beta.2", `{"name":"@zerozhang-giza/kdl-agent","version":"1.0.0;echo bad"}`, "unavailable", 200},
+		{"injection", "0.1.0-beta.2", `{"name":"@kuaidaili/kdl-agent","version":"1.0.0;echo bad"}`, "unavailable", 200},
 		{"wrong package", "0.1.0-beta.2", `{"name":"other","version":"1.0.0"}`, "unavailable", 200},
 		{"development", "0.1.0-dev", `{}`, "development", 200},
 	} {

@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gizaZerozhang/kdl-agent-cli/internal/client"
-	"github.com/gizaZerozhang/kdl-agent-cli/internal/cmdutil"
-	"github.com/gizaZerozhang/kdl-agent-cli/internal/config"
+	"github.com/kuaidaili/kdl-agent-cli/internal/client"
+	"github.com/kuaidaili/kdl-agent-cli/internal/cmdutil"
+	"github.com/kuaidaili/kdl-agent-cli/internal/config"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )

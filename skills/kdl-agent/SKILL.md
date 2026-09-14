@@ -5,11 +5,11 @@ description: 在用户需要查询快代理账户、余额、代理订单、接�
 
 # 快代理 CLI
 
-本 Skill 使用客户侧 `kdl-agent` 操作快代理已有服务。适用版本为 0.1.0-beta.4，属于预发行验证版本；最低系统与真实业务验收状态以同版本 Release 说明为准。
+本 Skill 使用客户侧 `kdl-agent` 操作快代理已有服务。适用版本为 0.1.0-beta.5，属于预发行验证版本；最低系统与真实业务验收状态以同版本 Release 说明为准。
 
 ## 使用前
 
-1. 检查 `kdl-agent --version`、任务相关命令的 `--help`，核对官方安装来源提供的适用版本。CLI 不存在时读取 `https://github.com/gizaZerozhang/kdl-agent-cli/blob/v0.1.0-beta.4/docs/install.md` 的同版本说明，使用其中已发布的 npm 包及固定版本；资源不可用或平台不支持时报告缺项，不猜测命令。
+1. 检查 `kdl-agent --version`、任务相关命令的 `--help`，核对官方安装来源提供的适用版本。CLI 不存在时读取 `https://github.com/kuaidaili/kdl-agent-cli/blob/v0.1.0-beta.5/docs/install.md` 的同版本说明，使用其中已发布的 npm 包及固定版本；资源不可用或平台不支持时报告缺项，不猜测命令。
 2. 使用 `kdl-agent auth status` 查看非敏感状态，再根据用户任务发起一次只读查询。状态仅显示“已配置”时不能报告远端验证通过。
 3. 需要登录时让用户在本地终端执行隐藏输入的 `auth login`。若该版本要求 `--token` 或把凭证写入项目目录，停止旧流程，使用与官方指南匹配的版本；不通过读取旧配置恢复凭证。
 4. 日常调用使用 `--format json`。一次查询的完成依据是命令退出码及实际数据，不以命令已启动或文件已创建代替。
@@ -18,7 +18,7 @@ description: 在用户需要查询快代理账户、余额、代理订单、接�
 
 - 每个新任务先查看 `kdl-agent update --help`。支持 `update check` 时执行一次 `kdl-agent update check --format json`；这是独立版本对象，不是业务响应信封。旧版不支持、`development` 或 `unavailable` 时继续现有业务，不反复重试。
 - `update_available` 时告知当前版本、推荐版本，征得用户同意后再安装；拒绝则本任务不再提示。不在业务命令运行中升级，也不自动回退更高版本。
-- 用户确认后，用返回的精确 `latest_version` 作为 VERSION，并明确需要安装 Skill 的 Agent 标识 AGENT，执行 `npx --yes @zerozhang-giza/kdl-agent@VERSION install --yes --agent AGENT --no-login`。可重复 `--agent`；不能猜测用户安装了哪些工具。不得在确认前运行 npx（它可能触发包下载与安装脚本）。
+- 用户确认后，用返回的精确 `latest_version` 作为 VERSION，并明确需要安装 Skill 的 Agent 标识 AGENT，执行 `npx --yes @kuaidaili/kdl-agent@VERSION install --yes --agent AGENT --no-login`。可重复 `--agent`；不能猜测用户安装了哪些工具。不得在确认前运行 npx（它可能触发包下载与安装脚本）。
 - CLI 和 Skill 必须来自同一版本；Skill 失败时重试同一命令修复。完成后核对 `kdl-agent --version`，版本不一致先检查 PATH；提醒刷新 Agent 会话，再做只读验证。禁止读取凭证文件或自动提权。
 - beta.2 及更早客户端没有新版检查命令，旧 Skill 也不会自动刷新。用户主动要求升级时读取官网安装指南和官方 Release，确认目标后使用上述同版本向导完成首次迁移。
 

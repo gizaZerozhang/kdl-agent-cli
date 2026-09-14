@@ -7,11 +7,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/gizaZerozhang/kdl-agent-cli/internal/cmdutil"
-	"github.com/gizaZerozhang/kdl-agent-cli/internal/downstream"
-	"github.com/gizaZerozhang/kdl-agent-cli/internal/m3b"
-	"github.com/gizaZerozhang/kdl-agent-cli/internal/output"
-	"github.com/gizaZerozhang/kdl-agent-cli/internal/secret"
+	"github.com/kuaidaili/kdl-agent-cli/internal/cmdutil"
+	"github.com/kuaidaili/kdl-agent-cli/internal/downstream"
+	"github.com/kuaidaili/kdl-agent-cli/internal/m3b"
+	"github.com/kuaidaili/kdl-agent-cli/internal/output"
+	"github.com/kuaidaili/kdl-agent-cli/internal/secret"
 	"github.com/spf13/cobra"
 )
 

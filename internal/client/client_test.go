@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gizaZerozhang/kdl-agent-cli/internal/client"
-	"github.com/gizaZerozhang/kdl-agent-cli/internal/config"
+	"github.com/kuaidaili/kdl-agent-cli/internal/client"
+	"github.com/kuaidaili/kdl-agent-cli/internal/config"
 )
 
 func TestGetSuccess(t *testing.T) {

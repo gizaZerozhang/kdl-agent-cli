@@ -2,19 +2,19 @@
 
 通过快代理 Agent Gateway 查询账户、订单、产品、消息与工单，并执行已授权的购买、工单创建、订单密钥读取及代理便利操作。
 
-源码与问题反馈：https://github.com/gizaZerozhang/kdl-agent-cli
+源码与问题反馈：https://github.com/kuaidaili/kdl-agent-cli
 
 源码许可证见 [LICENSE](./LICENSE)。
 
 ## npm 安装
 
-需要 Node.js 22.14+ 和用户可写的 npm 全局目录。配套版本 `0.1.0-beta.4` 的发行结果见 [npm](https://www.npmjs.com/package/@zerozhang-giza/kdl-agent/v/0.1.0-beta.4) 和 [GitHub Release](https://github.com/gizaZerozhang/kdl-agent-cli/releases/tag/v0.1.0-beta.4)：
+需要 Node.js 22.14+ 和用户可写的 npm 全局目录。配套版本 `0.1.0-beta.5` 的发行结果见 [npm](https://www.npmjs.com/package/@kuaidaili/kdl-agent/v/0.1.0-beta.5) 和 [GitHub Release](https://github.com/kuaidaili/kdl-agent-cli/releases/tag/v0.1.0-beta.5)：
 
 ```bash
-npx @zerozhang-giza/kdl-agent@0.1.0-beta.4 install
+npx @kuaidaili/kdl-agent@0.1.0-beta.5 install
 ```
 
-向导安装 CLI 与同版本 Skill，然后引导本机隐藏输入凭证并验证首次只读查询。Agent 自动安装使用 `install --yes --agent codex --no-login`，由用户在本地终端完成登录。仅安装 CLI 可执行 `npm install -g @zerozhang-giza/kdl-agent@0.1.0-beta.4`。
+向导安装 CLI 与同版本 Skill，然后引导本机隐藏输入凭证并验证首次只读查询。Agent 自动安装使用 `install --yes --agent codex --no-login`，由用户在本地终端完成登录。仅安装 CLI 可执行 `npm install -g @kuaidaili/kdl-agent@0.1.0-beta.5`。
 
 npm 包按平台下载 GitHub Release 原生二进制并验证内置 SHA256。当前请显式指定 beta 版本或 `@beta`；npm 自动附加的 `latest` 仍指向该预发行版，不代表稳定就绪。beta 的 macOS 程序未签名/公证；最低系统和真实业务仍待专项验收。安装、升级、回退与卸载见[安装指南](./docs/install.md)，维护者见[发行操作](./docs/releasing.md)。
 

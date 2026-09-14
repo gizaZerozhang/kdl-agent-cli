@@ -42,7 +42,7 @@ async function main(args, { run = command, install = ensureInstalled, readConfig
   if (mode === 'update') {
     options.noLogin = true;
     if (options.help) {
-      console.log('同步升级 CLI 与同版本 Skill\n检查新版：kdl-agent update check --format json\n用法：npx --yes @zerozhang-giza/kdl-agent@<目标版本> update --agent codex [--yes]\n默认询问确认；非交互必须显式 --yes。保留登录配置，Skill 失败时重复同一命令修复。');
+      console.log(`同步升级 CLI 与同版本 Skill\n检查新版：kdl-agent update check --format json\n用法：npx --yes ${readConfig().pkg.name}@<目标版本> update --agent codex [--yes]\n默认询问确认；非交互必须显式 --yes。保留登录配置，Skill 失败时重复同一命令修复。`);
       return;
     }
     if (options.noSkills) throw new Error('同步升级不能跳过 Skill；请移除 --no-skills');
@@ -63,6 +63,19 @@ async function main(args, { run = command, install = ensureInstalled, readConfig
   if (prefixResult.status !== 0) throw new Error('无法读取 npm 全局目录，请检查 Node.js/npm');
   const prefix = prefixResult.stdout.trim();
   const modules = process.platform === 'win32' ? path.join(prefix, 'node_modules') : path.join(prefix, 'lib/node_modules');
+  for (const legacy of pkg.kdl.legacyPackages || []) {
+    if (!/^@[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/.test(legacy) || legacy === pkg.name) throw new Error('旧 npm 包迁移配置无效');
+    const legacyRoot = path.join(modules, ...legacy.split('/'));
+    let entry;
+    try { entry = fs.lstatSync(legacyRoot); } catch (error) { if (error.code !== 'ENOENT') throw error; }
+    if (!entry) continue;
+    let restore = '请先记录旧包的精确版本，以便必要时恢复。';
+    try {
+      const old = JSON.parse(fs.readFileSync(path.join(legacyRoot, 'package.json'), 'utf8'));
+      if (old.name === legacy && /^\d+\.\d+\.\d+(?:-beta\.\d+)?$/.test(old.version)) restore = `恢复旧版：npm install -g ${legacy}@${old.version}`;
+    } catch {}
+    throw new Error(`发现旧包 ${legacy}，与公司包共用 kdl-agent 命令；未修改全局安装。\n先执行 npm uninstall -g ${legacy}，再重新运行本次公司包向导。\n.kdl 配置与 Skill 保留。${restore}`);
+  }
   const installedRoot = path.join(modules, ...pkg.name.split('/'));
   let previous;
   try { previous = JSON.parse(fs.readFileSync(path.join(installedRoot, 'package.json'), 'utf8')).version; } catch {}

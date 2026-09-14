@@ -1,4 +1,4 @@
-module github.com/gizaZerozhang/kdl-agent-cli
+module github.com/kuaidaili/kdl-agent-cli
 
 go 1.22.0
 

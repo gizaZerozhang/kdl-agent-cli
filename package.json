@@ -1,6 +1,6 @@
 {
-  "name": "@zerozhang-giza/kdl-agent",
-  "version": "0.1.0-beta.4",
+  "name": "@kuaidaili/kdl-agent",
+  "version": "0.1.0-beta.5",
   "description": "快代理 CLI：账户与订单查询、授权操作及代理便利命令",
   "license": "MIT",
   "engines": {
@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/gizaZerozhang/kdl-agent-cli.git"
+    "url": "git+https://github.com/kuaidaili/kdl-agent-cli.git"
   },
   "publishConfig": {
     "access": "public",
@@ -44,6 +44,7 @@
   },
   "kdl": {
     "command": "kdl-agent",
+    "legacyPackages": ["@zerozhang-giza/kdl-agent"],
     "skill": "kdl-agent",
     "skillsPackage": "skills@1.5.25"
   }

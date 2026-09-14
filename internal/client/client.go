@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gizaZerozhang/kdl-agent-cli/internal/config"
+	"github.com/kuaidaili/kdl-agent-cli/internal/config"
 )
 
 // GatewayResponse 与 server SuccessEnvelope / ErrorEnvelope 对齐。

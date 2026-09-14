@@ -1,5 +1,11 @@
 # 更新记录
 
+## 0.1.0-beta.5 - 2026-09-14
+
+- GitHub 迁移至 `kuaidaili/kdl-agent-cli`，npm 使用公司用户账号的 `@kuaidaili/kdl-agent`，本轮不创建 npm Organization。
+- 更新安装来源、Go module、更新检查与同版本 Skill；旧个人包仍需显式迁移，历史版本和附件保留。
+- 安装向导发现旧 scope 全局包时停止，提示卸载旧包、重试公司向导及精确版本恢复命令；配置与 Skill 保留。
+
 ## 未发布
 
 ## 0.1.0-beta.4 - 2026-09-11

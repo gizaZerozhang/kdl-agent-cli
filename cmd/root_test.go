@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gizaZerozhang/kdl-agent-cli/cmd"
-	"github.com/gizaZerozhang/kdl-agent-cli/internal/config"
+	"github.com/kuaidaili/kdl-agent-cli/cmd"
+	"github.com/kuaidaili/kdl-agent-cli/internal/config"
 )
 
 func TestRootHelp(t *testing.T) {

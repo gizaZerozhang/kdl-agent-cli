@@ -5,7 +5,7 @@ builds:
     env: [CGO_ENABLED=0]
     flags: [-trimpath]
     ldflags:
-      - -s -w -X github.com/gizaZerozhang/kdl-agent-cli/cmd.Version={{ .Version }} -X github.com/gizaZerozhang/kdl-agent-cli/cmd.Commit={{ .FullCommit }}
+      - -s -w -X github.com/kuaidaili/kdl-agent-cli/cmd.Version={{ .Version }} -X github.com/kuaidaili/kdl-agent-cli/cmd.Commit={{ .FullCommit }}
     goos: [darwin, linux, windows]
     goarch: [amd64, arm64]
     ignore:

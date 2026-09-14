@@ -1,6 +1,6 @@
 # 快代理 CLI 使用指南
 
-[安装指南](./install.md) · [源码仓库](https://github.com/gizaZerozhang/kdl-agent-cli) · [版本记录](https://github.com/gizaZerozhang/kdl-agent-cli/releases)
+[安装指南](./install.md) · [源码仓库](https://github.com/kuaidaili/kdl-agent-cli) · [版本记录](https://github.com/kuaidaili/kdl-agent-cli/releases)
 
 直接调用 HTTP 接口见 [Agent Gateway API 接入指南](./api-guide.md)。
 
@@ -247,10 +247,10 @@ Windows 对应 `%USERPROFILE%\.kdl\`。macOS/Linux 目录权限为 `0700`、凭�
 kdl-agent --version
 ```
 
-升级或回退时，将下方版本号替换为[版本记录](https://github.com/gizaZerozhang/kdl-agent-cli/releases)中的目标版本，同步安装 CLI 和 Skill（示例目标为 Codex）：
+升级或回退时，将下方版本号替换为[版本记录](https://github.com/kuaidaili/kdl-agent-cli/releases)中的目标版本，同步安装 CLI 和 Skill（示例目标为 Codex）：
 
 ```bash
-npx --yes @zerozhang-giza/kdl-agent@0.1.0-beta.4 install --yes --agent codex --no-login
+npx --yes @kuaidaili/kdl-agent@0.1.0-beta.5 install --yes --agent codex --no-login
 ```
 
 升级保留登录配置；Skill 安装失败时重试同一命令。完成后核对版本、刷新 Agent 会话，再执行一次账户查询。发布新版不会静默替换本机安装。
@@ -261,7 +261,7 @@ npx --yes @zerozhang-giza/kdl-agent@0.1.0-beta.4 install --yes --agent codex --n
 
 ```bash
 kdl-agent auth logout
-npm uninstall -g @zerozhang-giza/kdl-agent
+npm uninstall -g @kuaidaili/kdl-agent
 ```
 
 卸载 npm 包不删除 Skill；按 AI 助手的管理方式移除。

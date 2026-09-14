@@ -4,7 +4,7 @@ package main
 import (
 	"os"
 
-	"github.com/gizaZerozhang/kdl-agent-cli/cmd"
+	"github.com/kuaidaili/kdl-agent-cli/cmd"
 )
 
 func main() {

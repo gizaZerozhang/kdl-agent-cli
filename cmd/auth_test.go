@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gizaZerozhang/kdl-agent-cli/cmd"
+	"github.com/kuaidaili/kdl-agent-cli/cmd"
 )
 
 func authHome(t *testing.T) string {

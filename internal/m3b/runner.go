@@ -5,9 +5,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/gizaZerozhang/kdl-agent-cli/internal/client"
-	"github.com/gizaZerozhang/kdl-agent-cli/internal/downstream"
-	"github.com/gizaZerozhang/kdl-agent-cli/internal/secret"
+	"github.com/kuaidaili/kdl-agent-cli/internal/client"
+	"github.com/kuaidaili/kdl-agent-cli/internal/downstream"
+	"github.com/kuaidaili/kdl-agent-cli/internal/secret"
 )
 
 // ProxyFetchParams 代理提取命令参数。

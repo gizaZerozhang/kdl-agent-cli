@@ -17,7 +17,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gizaZerozhang/kdl-agent-cli/internal/downstream"
+	"github.com/kuaidaili/kdl-agent-cli/internal/downstream"
 )
 
 // 本地模拟完整链路，确保认证只用于 CONNECT，不进入目标网站请求。

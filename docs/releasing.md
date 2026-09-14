@@ -1,6 +1,14 @@
 # 发行维护
 
-当前个人 npm 包为 `@zerozhang-giza/kdl-agent`。个人账号阶段结束后，统一更新 package.json 中的 npm 身份、repository 和 Skill 来源，保留历史版本并验证旧包迁移。
+当前 GitHub 为 `kuaidaili/kdl-agent-cli`，npm 使用公司用户 `kuaidaili` 的 `@kuaidaili/kdl-agent`，本轮不创建 npm Organization。公司首版为 `0.1.0-beta.5`，实际发布结果以同版本 Release 和 registry 为准；个人包与历史附件保留，迁移步骤见[安装指南](./install.md#从个人包迁移)。
+
+## 公司发行身份
+
+- tag 保护与 `github-release`、`npm-production` 环境审批随仓库转移保留；当前获公司仓库 Admin 的维护者继续审批。
+- 首次创建公司包需公司 npm 账号完成本人认证，发布已有固定候选；随后把 Trusted Publisher 绑定到 `kuaidaili/kdl-agent-cli`、`publish-npm.yml`、`npm-production`，不能沿用旧 owner 的绑定。
+- 新包首次手工发布不声明 OIDC provenance；后续通过新绑定实际发布后再记录验证结果。旧个人包只有在新包安装验收通过后才添加迁移提示。
+- 新包仍使用 beta；npm 首次建包可能自动附加 latest，实际标签须回读，不能把 latest 当作稳定验收证据。
+- 历史记录中的个人仓库地址保留用于追溯；旧地址重定向、旧二进制下载和旧 Skill tag 读取须实测。
 
 ## 首次 beta 发布记录
 
@@ -44,7 +52,7 @@ npm run release:prepare -- dist/candidate dist/npm
 
 审批前检查 npm 候选 pack-report.json 的允许文件范围、各平台运行结果。工作流自动运行 `verify-release.cjs`，重试时核验已有 Release 附件，不覆盖候选；npm 发布失败时重试 `publish-npm.yml` 并指定同一 tag。
 
-npm Trusted Publisher 已配置：GitHub owner `gizaZerozhang`、repository `kdl-agent-cli`、workflow `publish-npm.yml`、environment `npm-production`。环境审批后通过 OIDC/provenance 发布固定候选并验证 registry integrity；同版本一致时跳过，不移动 dist-tag，冲突时停止。发布后仍需隔离目录安装验收和 provenance 验证。
+npm Trusted Publisher 的公司绑定目标：GitHub owner `kuaidaili`、repository `kdl-agent-cli`、workflow `publish-npm.yml`、environment `npm-production`。首次建包后配置并回读确认；环境审批后通过 OIDC/provenance 发布固定候选并验证 registry integrity，同版本一致时跳过，不移动 dist-tag，冲突时停止。发布后仍需隔离目录安装验收和 provenance 验证。
 
 日常操作：更新 package.json/锁文件与配套资料，测试通过后提交干净 commit，再创建并推送新的 `vX.Y.Z-beta.N` tag。已发行版本不可重用。工作流完成后同步官网精确版本和文档，官网部署独立执行。
 

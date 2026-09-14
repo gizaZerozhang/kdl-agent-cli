@@ -14,7 +14,7 @@ import (
 	"golang.org/x/mod/semver"
 )
 
-const updatePackage = "@zerozhang-giza/kdl-agent"
+const updatePackage = "@kuaidaili/kdl-agent"
 
 var releaseVersionPattern = regexp.MustCompile(`^\d+\.\d+\.\d+(?:-beta\.\d+)?$`)
 
@@ -84,7 +84,7 @@ func newUpdateCmd() *cobra.Command {
 			return fmt.Errorf("渠道无效；请使用 --channel beta 或 latest")
 		}
 		client := &http.Client{Timeout: 5 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
-		result := checkUpdate(cmd.Context(), Version, selected, client, "https://registry.npmjs.org/@zerozhang-giza%2Fkdl-agent/")
+		result := checkUpdate(cmd.Context(), Version, selected, client, "https://registry.npmjs.org/@kuaidaili%2Fkdl-agent/")
 		if globalFormat == "json" {
 			return writeJSON(newFactory().Out, result)
 		}
