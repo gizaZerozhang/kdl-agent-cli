@@ -57,7 +57,7 @@ python3 scripts/release-assets.py collect dist dist/candidate
 npm run release:prepare -- dist/candidate dist/npm
 ```
 
-工具链固定 Go 1.23.6、GoReleaser 2.18.1、Node 22.14+；可信发布使用 npm 11.5.2。`v*` tag 触发 `release.yml`：测试、构建、嵌入 BUILD.json、固定 npm tgz、五平台运行验活，然后经 `github-release` 环境审批校验并公开 Release，自动派发同 tag 的 npm 工作流。当前仅开放 beta；稳定版签名及业务门尚未接入。beta.3 已完成自动串联与 OIDC 发行验证。
+工具链固定 Go 1.23.6、GoReleaser 2.18.1、Node 22.14+；可信发布使用 npm 11.5.2。`v*` tag 触发 `release.yml`：先经 `github-release` 审批，测试、构建、嵌入 BUILD.json、固定 npm tgz、五平台运行验活，再审批公开固定 Release，自动派发同 tag 的 npm 工作流。beta 在 Linux 构建；稳定候选在 macOS 构建并验证签名、公证，缺少同版本验收或 Apple 配置时停止。beta.3 的个人包已完成 OIDC 验证；公司绑定的实发仍待下一版本。
 
 审批前检查 npm 候选 pack-report.json 的允许文件范围、各平台运行结果。工作流自动运行 `verify-release.cjs`，重试时核验已有 Release 附件，不覆盖候选；npm 发布失败时重试 `publish-npm.yml` 并指定同一 tag。
 
@@ -68,5 +68,25 @@ npm Trusted Publisher 的公司绑定目标：GitHub owner `kuaidaili`、reposit
 ## 稳定版门
 
 稳定发行要求 Apple Developer ID 签名、公证和验证记录，以及最低系统与真实业务验收；缺少材料时发行工作流停止。beta 可输出未签名候选，必须保留预发行与平台验收说明，不能标记稳定就绪。
+
+### Apple 配置与验收
+
+公司账号尚未开通，当前只有接入实现，没有实际签名或公证成功记录。公司管理员准备 Developer ID Application 的 `.p12` 及密码、App Store Connect `.p8` API key、key ID、issuer ID 和 Team ID；不要把私钥、密码或恢复码交给对话或写入仓库。
+
+在 GitHub `github-release` 环境设置 Secrets：`MACOS_SIGN_P12`（p12 base64）、`MACOS_SIGN_PASSWORD`、`MACOS_NOTARY_KEY`（p8 base64）、`MACOS_NOTARY_KEY_ID`、`MACOS_NOTARY_ISSUER_ID`；环境 Variable 为 `MACOS_TEAM_ID`。审批人核对 tag 和来源，签名材料仅注入稳定候选的 GoReleaser 步骤，不提供给普通 CI 或 PR。
+
+GoReleaser 使用跨平台 quill 签名、公证，等待 Apple 结果；随后 `verify-macos.py` 在 macOS 对两份最终归档执行 codesign 和 Gatekeeper 检查，确认公司 Team ID、Developer ID Application、hardened runtime、时间戳和 Notarized Developer ID。成功后生成 `macos-signing-verified.json`，绑定 commit、版本、双架构归档与 SHA256SUMS；打包及上传前再次核对。不为纯 CLI 引入 DMG/PKG 或额外 GoReleaser Pro 需求。配置依据 [GoReleaser notarize](https://goreleaser.com/customization/sign/notarize/)。
+
+### 同版本稳定验收记录
+
+完成验收后提交 `release/stable-acceptance.json`，包含 `schema_version: 1`、实际 `version`、`reviewer`，以及 `checks` 数组。每项为 `id`、`status: passed`、可访问的 HTTPS `evidence` 索引；不放凭证、业务响应和内部部署参数。必须逐项覆盖：
+
+- `macos-12-arm64`、`macos-12-amd64`、`ubuntu-22.04-arm64`、`ubuntu-22.04-amd64`、`windows-11-amd64`。
+- `windows-acl`：当前用户独占 DACL、禁止继承、登录/更新/退出、文件占用失败恢复；Windows Server runner 结果不能替代 Windows 11 实机。
+- `business-e2e`、`production-operations`、`public-entry`：同版本业务/授权回归、运行与回滚、正式安装入口及 Skill。
+
+未完成时不创建虚假的 passed 文件；检查器只校验记录完整性，环境审批人必须核对证据与当前 tag，不能把手工状态当作实测。`public-entry` 与官网正式域名/文档切换放在发布前最后一步；其余工作先完成。验收记录随稳定 Release 附件及校验清单交付。
+
+稳定版本为 `X.Y.Z`，发布 `latest` 并取消 GitHub prerelease；预发行 `X.Y.Z-beta.N` 发布 `beta`。版本不匹配、稳定门缺项、签名材料缺失或重复版本内容冲突时拒绝；同版本一致时跳过且不移动标签。签名/稳定验收实现不能替代公司 OIDC 的首次实际发布与 provenance 验证。
 
 保护 `v*` tag 禁止更新和删除；配置 `github-release`、`npm-production` 环境审批及最小权限。流水线不会覆盖已存在 Release，失败时下载既有候选核对来源，不自动重建替换公开附件。GitHub 已公开但 npm 失败时，只补发原 tgz；npm 同版本已存在时先核对 registry 的 integrity，不重复发布。回退 npm dist-tag，提示问题版本弃用，不能把弃用等同于禁止精确安装。

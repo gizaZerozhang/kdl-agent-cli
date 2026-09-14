@@ -30,6 +30,7 @@ def identity():
 
 def preflight():
     record = identity()
+    subprocess.run(["node", "scripts/release-policy.cjs", "v" + record["version"]], cwd=ROOT, check=True)
     directory = ROOT / ".release"
     directory.mkdir(exist_ok=True)
     (directory / "BUILD.json").write_text(json.dumps(record, indent=2) + "\n")
@@ -70,6 +71,9 @@ def prepare(source, output):
         destination = output / name
         with destination.open("xb") as stream:
             stream.write((ROOT / "docs" / name).read_bytes())
+    if "-beta." not in version:
+        subprocess.run(["node", "scripts/release-policy.cjs", "v" + version], cwd=ROOT, check=True)
+        shutil.copyfile(ROOT / "release/stable-acceptance.json", output / "stable-acceptance.json")
     (output / "release-notes.md").write_text(
         f"# 快代理 CLI {version}\n\n"
         + f"源码：{subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()}\n\n"

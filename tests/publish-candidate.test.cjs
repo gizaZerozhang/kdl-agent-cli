@@ -24,3 +24,12 @@ test('发布失败和 registry 故障不会报告成功', async () => {
   await assert.rejects(registryIntegrity(async () => ({ status: 503, ok: false })), /HTTP 503/);
   assert.equal(await registryIntegrity(async () => ({ status: 404 })), null);
 });
+test('稳定版发布使用 latest 且保留 provenance，重试不移动标签', async () => {
+  let reads = 0;
+  await main(file, { version: '0.1.0', read: async () => ++reads === 1 ? null : integrity, run(name, args) {
+    assert.equal(args[args.indexOf('--tag') + 1], 'latest');
+    assert.ok(args.includes('--provenance'));
+    return { status: 0 };
+  } });
+  await main(file, { version: '0.1.0', read: async () => integrity, run: () => assert.fail('不得重复发布') });
+});

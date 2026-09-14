@@ -4,10 +4,12 @@ const path = require('node:path');
 const { spawnSync, execFileSync } = require('node:child_process');
 const { config, checksums, hashFile } = require('./runtime/install.cjs');
 const { verify } = require('./verify-package.cjs');
+const { checkRelease, validateSigning } = require('./release-policy.cjs');
 
 async function prepare(input, output) {
   const root = path.resolve(__dirname, '..');
   const { pkg, repository } = config(root);
+  checkRelease(`v${pkg.version}`, { root });
   if (fs.existsSync(output)) throw new Error('npm 候选目录已存在，拒绝覆盖');
   const commit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
   if (execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' }).trim()) throw new Error('发行打包要求干净源码；先提交改动');
@@ -20,7 +22,7 @@ async function prepare(input, output) {
   const signed = fs.existsSync(path.join(input, 'macos-signing-verified.json'));
   if (signed) {
     const record = JSON.parse(fs.readFileSync(path.join(input, 'macos-signing-verified.json'), 'utf8'));
-    if (record.commit !== commit || record.version !== pkg.version || record.sha256 !== await hashFile(path.join(input, 'SHA256SUMS'))) throw new Error('签名验证记录不属于当前候选');
+    validateSigning(record, source, await hashFile(path.join(input, 'SHA256SUMS')), checksums(sums.toString()));
   }
   fs.mkdirSync(output, { recursive: true });
   const stage = path.join(output, 'package');
