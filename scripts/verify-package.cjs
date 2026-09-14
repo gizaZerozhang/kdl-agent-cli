@@ -7,7 +7,7 @@ function verify(root = path.resolve(__dirname, '..')) {
   if (pkg.name.includes('pending') || !/^@[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/.test(pkg.name)) throw new Error('请先绑定实际 npm 包名');
   const release = JSON.parse(fs.readFileSync(path.join(root, 'release.json'), 'utf8'));
   if (release.version !== pkg.version || release.repository !== repository || !/^[a-f0-9]{40}$/.test(release.commit) || release.dirty !== false) throw new Error('发行来源、版本或仓库不一致');
-  if (!pkg.version.includes('-beta.') && !release.macosSigned) throw new Error('稳定发行缺少 macOS 签名公证记录');
+  if (typeof release.macosSigned !== 'boolean') throw new Error('发行记录必须如实标明 macOS 签名状态');
   const sums = checksums(fs.readFileSync(path.join(root, 'SHA256SUMS'), 'utf8'));
   if (!pkg.version.includes('-beta.') && !sums.has('stable-acceptance.json')) throw new Error('稳定发行缺少配套验收记录');
   for (const item of TARGETS) {

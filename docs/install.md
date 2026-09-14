@@ -5,7 +5,7 @@
 ## 环境
 
 - Node.js 22.14+，使用用户可写的 npm 全局目录；无需 Go/Python。
-- 原生构建目标为 macOS arm64/amd64、Linux arm64/amd64、Windows amd64。最低系统与真实业务验收仍待补证；macOS beta 包未签名/公证。
+- 原生构建目标为 macOS arm64/amd64、Linux arm64/amd64、Windows amd64。不承诺未经实测的最低系统兼容范围；当前 macOS 包未签名/公证，系统可能阻止运行。客户端人工平台验收及 Apple 签名不作为本次发行前置条件。
 - 网络需要访问 npm registry、GitHub Release 附件及 Skill 源码。受控网络可使用 `HTTPS_PROXY`；下载仍校验包内 SHA256，不关闭 TLS。
 
 ## 推荐安装

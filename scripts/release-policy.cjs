@@ -2,12 +2,9 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const CHECKS = [
-  'macos-12-arm64', 'macos-12-amd64', 'ubuntu-22.04-arm64', 'ubuntu-22.04-amd64',
-  'windows-11-amd64', 'windows-acl', 'business-e2e', 'production-operations', 'public-entry',
-];
-const SIGNING_ENV = ['MACOS_SIGN_P12', 'MACOS_SIGN_PASSWORD', 'MACOS_NOTARY_KEY',
-  'MACOS_NOTARY_KEY_ID', 'MACOS_NOTARY_ISSUER_ID', 'MACOS_TEAM_ID'];
+// 客户端人工平台验收不作为发行门；构建、运行烟测和权限回归继续由 CI 执行。
+const CHECKS = ['business-e2e', 'production-operations', 'public-entry'];
+
 
 function releaseChannel(version) {
   const number = '(0|[1-9][0-9]*)';
@@ -34,7 +31,7 @@ function validateAcceptance(record, version) {
   return record;
 }
 
-function checkRelease(tag, { root = path.resolve(__dirname, '..'), env = process.env, signing = false } = {}) {
+function checkRelease(tag, { root = path.resolve(__dirname, '..') } = {}) {
   const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json')));
   const channel = releaseChannel(pkg.version);
   if (tag !== `v${pkg.version}`) throw new Error('tag 与 package.json 版本不一致');
@@ -42,10 +39,7 @@ function checkRelease(tag, { root = path.resolve(__dirname, '..'), env = process
     const file = path.join(root, 'release/stable-acceptance.json');
     if (!fs.existsSync(file)) throw new Error('稳定发行缺少 release/stable-acceptance.json 验收记录');
     validateAcceptance(JSON.parse(fs.readFileSync(file)), pkg.version);
-    if (signing) {
-      const missing = SIGNING_ENV.filter(name => !env[name]?.trim());
-      if (missing.length) throw new Error(`稳定发行缺少签名配置：${missing.join(', ')}`);
-    }
+
   }
   return channel;
 }
@@ -62,8 +56,8 @@ function validateSigning(record, source, sumsHash, sums) {
 
 if (require.main === module) {
   try {
-    const channel = checkRelease(process.argv[2], { signing: process.argv.includes('--require-signing') });
+    const channel = checkRelease(process.argv[2]);
     console.log(`发行策略校验通过：${channel}`);
   } catch (error) { console.error(error.message); process.exitCode = 1; }
 }
-module.exports = { releaseChannel, validateAcceptance, validateSigning, checkRelease, CHECKS, SIGNING_ENV };
+module.exports = { releaseChannel, validateAcceptance, validateSigning, checkRelease, CHECKS };

@@ -4,11 +4,11 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { releaseChannel, checkRelease, validateAcceptance, validateSigning, CHECKS, SIGNING_ENV } = require('../scripts/release-policy.cjs');
+const { releaseChannel, checkRelease, validateAcceptance, validateSigning } = require('../scripts/release-policy.cjs');
 
 function acceptance() {
   return { schema_version: 1, version: '0.1.0', reviewer: 'test-reviewer',
-    checks: CHECKS.map(id => ({ id, status: 'passed', evidence: `https://example.invalid/evidence/${id}` })) };
+    checks: ['business-e2e', 'production-operations', 'public-entry'].map(id => ({ id, status: 'passed', evidence: `https://example.invalid/evidence/${id}` })) };
 }
 
 test('稳定和 beta 渠道严格区分，拒绝开发版和非法版本', () => {
@@ -19,7 +19,7 @@ test('稳定和 beta 渠道严格区分，拒绝开发版和非法版本', () =>
   }
 });
 
-test('稳定版必须具备同版本完整验收证据，不接受缺项、失败或重复', () => {
+test('取消客户端人工平台验收后仍要求业务、运维和入口证据，不接受缺项、失败或重复', () => {
   assert.equal(validateAcceptance(acceptance(), '0.1.0').version, '0.1.0');
   for (const mutate of [
     value => { value.version = '0.2.0'; }, value => { value.reviewer = ''; },
@@ -31,7 +31,7 @@ test('稳定版必须具备同版本完整验收证据，不接受缺项、失�
   }
 });
 
-test('稳定 tag 缺验收或签名配置时停止，beta 不要求 Apple 账号', t => {
+test('稳定 tag 仍要求业务验收，但不再依赖 Apple 账号', t => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'kdl-policy-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const writePackage = version => fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({ version }));
@@ -39,12 +39,10 @@ test('稳定 tag 缺验收或签名配置时停止，beta 不要求 Apple 账号
   assert.throws(() => checkRelease('v0.1.0', { root }), /缺少/);
   fs.mkdirSync(path.join(root, 'release'));
   fs.writeFileSync(path.join(root, 'release/stable-acceptance.json'), JSON.stringify(acceptance()));
-  assert.throws(() => checkRelease('v0.1.0', { root, env: {}, signing: true }), /签名配置/);
-  const env = Object.fromEntries(SIGNING_ENV.map(name => [name, 'sentinel']));
-  assert.equal(checkRelease('v0.1.0', { root, env, signing: true }), 'latest');
-  assert.throws(() => checkRelease('v0.2.0', { root, env }), /不一致/);
+  assert.equal(checkRelease('v0.1.0', { root }), 'latest');
+  assert.throws(() => checkRelease('v0.2.0', { root }), /不一致/);
   writePackage('0.1.0-beta.6');
-  assert.equal(checkRelease('v0.1.0-beta.6', { root, env: {}, signing: true }), 'beta');
+  assert.equal(checkRelease('v0.1.0-beta.6', { root }), 'beta');
 });
 
 test('签名记录必须同时绑定双架构、来源和完整候选', () => {

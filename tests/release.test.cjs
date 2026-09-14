@@ -25,9 +25,14 @@ test('beta 候选完整性检查通过', t => {
   const c = candidate(t);
   assert.equal(verify(c.root).version, c.pkg.version);
 });
-test('稳定版缺少签名公证记录时拒绝打包', t => {
+test('未签名稳定版保留业务验收清单要求，并如实返回签名状态', t => {
   const c = candidate(t, '0.1.0');
-  assert.throws(() => verify(c.root), /签名公证/);
+  assert.throws(() => verify(c.root), /配套验收/);
+  const sums = c.sums + `${'c'.repeat(64)}  stable-acceptance.json\n`;
+  fs.writeFileSync(path.join(c.root, 'SHA256SUMS'), sums);
+  fs.writeFileSync(path.join(c.root, 'release.json'), JSON.stringify({ ...c.record,
+    sha256: crypto.createHash('sha256').update(sums).digest('hex') }));
+  assert.equal(verify(c.root).macosSigned, false);
 });
 test('拒绝源码 dirty 或来源、版本不一致', t => {
   const c = candidate(t);
