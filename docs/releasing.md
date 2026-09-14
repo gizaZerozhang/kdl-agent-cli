@@ -2,6 +2,13 @@
 
 当前 GitHub 为 `kuaidaili/kdl-agent-cli`，npm 使用公司用户 `kuaidaili` 的 `@kuaidaili/kdl-agent`，本轮不创建 npm Organization。公司首版 `0.1.0-beta.5` 已公开；个人包与历史附件保留，迁移步骤见[安装指南](./install.md#从个人包迁移)。
 
+## 稳定发行准备验收（2026-09-14）
+
+- 实现 `4a95c1d`、工作流 `da9cb1f` 已合入 main；[CI](https://github.com/kuaidaili/kdl-agent-cli/actions/runs/34822987091) 的 macOS、Linux、Windows 源码回归及候选构建全部通过。npm 40 项、签名验证 Python 4 项、Go race/vet、GoReleaser 配置与工作流语法检查通过。
+- Windows Server runner 原生验证当前用户 DACL、禁止父目录权限继承、登录/更新/退出和配置替换失败后的凭证恢复；最低 Windows 11 与 macOS 12、Ubuntu 22.04 目标机器仍需独立验收。
+- Apple 尚未开通，只有接入与模拟负例，没有实签/公证证据；公司 OIDC 首次实发、最低系统、生产业务和入口验收仍待完成。稳定发行缺任何必要记录或配置即停止。
+- 本轮未创建新 tag/npm 版本，既有 beta.5 附件保留。官网及文档的 stg3 链接留到发布前最后切换。
+
 ## 公司 beta.5 发行记录
 
 - 2026-09-14 已公开 [GitHub Release](https://github.com/kuaidaili/kdl-agent-cli/releases/tag/v0.1.0-beta.5) 和 [npm 包](https://www.npmjs.com/package/@kuaidaili/kdl-agent/v/0.1.0-beta.5)，源码 `aa10cdb3dc4c1bee6901d3ad28fd9f0eb1d83d4a`；[候选、五平台与 Release](https://github.com/kuaidaili/kdl-agent-cli/actions/runs/34815938364)全部通过。
@@ -73,7 +80,7 @@ npm Trusted Publisher 的公司绑定目标：GitHub owner `kuaidaili`、reposit
 
 公司账号尚未开通，当前只有接入实现，没有实际签名或公证成功记录。公司管理员准备 Developer ID Application 的 `.p12` 及密码、App Store Connect `.p8` API key、key ID、issuer ID 和 Team ID；不要把私钥、密码或恢复码交给对话或写入仓库。
 
-在 GitHub `github-release` 环境设置 Secrets：`MACOS_SIGN_P12`（p12 base64）、`MACOS_SIGN_PASSWORD`、`MACOS_NOTARY_KEY`（p8 base64）、`MACOS_NOTARY_KEY_ID`、`MACOS_NOTARY_ISSUER_ID`；环境 Variable 为 `MACOS_TEAM_ID`。审批人核对 tag 和来源，签名材料仅注入稳定候选的 GoReleaser 步骤，不提供给普通 CI 或 PR。
+在 GitHub `github-release` 环境设置 Secrets：`MACOS_SIGN_P12`（p12 base64）、`MACOS_SIGN_PASSWORD`、`MACOS_NOTARY_KEY`（p8 base64）、`MACOS_NOTARY_KEY_ID`、`MACOS_NOTARY_ISSUER_ID`；环境 Variable 为 `MACOS_TEAM_ID`。审批人核对 tag 和来源，签名配置在候选作业门禁中检查，实际签名材料由稳定候选的 GoReleaser 步骤使用，不提供给普通 CI 或 PR。
 
 GoReleaser 使用跨平台 quill 签名、公证，等待 Apple 结果；随后 `verify-macos.py` 在 macOS 对两份最终归档执行 codesign 和 Gatekeeper 检查，确认公司 Team ID、Developer ID Application、hardened runtime、时间戳和 Notarized Developer ID。成功后生成 `macos-signing-verified.json`，绑定 commit、版本、双架构归档与 SHA256SUMS；打包及上传前再次核对。不为纯 CLI 引入 DMG/PKG 或额外 GoReleaser Pro 需求。配置依据 [GoReleaser notarize](https://goreleaser.com/customization/sign/notarize/)。
 
