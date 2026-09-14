@@ -1,6 +1,15 @@
 # 发行维护
 
-当前 GitHub 为 `kuaidaili/kdl-agent-cli`，npm 使用公司用户 `kuaidaili` 的 `@kuaidaili/kdl-agent`，本轮不创建 npm Organization。公司首版为 `0.1.0-beta.5`，实际发布结果以同版本 Release 和 registry 为准；个人包与历史附件保留，迁移步骤见[安装指南](./install.md#从个人包迁移)。
+当前 GitHub 为 `kuaidaili/kdl-agent-cli`，npm 使用公司用户 `kuaidaili` 的 `@kuaidaili/kdl-agent`，本轮不创建 npm Organization。公司首版 `0.1.0-beta.5` 已公开；个人包与历史附件保留，迁移步骤见[安装指南](./install.md#从个人包迁移)。
+
+## 公司 beta.5 发行记录
+
+- 2026-09-14 已公开 [GitHub Release](https://github.com/kuaidaili/kdl-agent-cli/releases/tag/v0.1.0-beta.5) 和 [npm 包](https://www.npmjs.com/package/@kuaidaili/kdl-agent/v/0.1.0-beta.5)，源码 `aa10cdb3dc4c1bee6901d3ad28fd9f0eb1d83d4a`；[候选、五平台与 Release](https://github.com/kuaidaili/kdl-agent-cli/actions/runs/34815938364)全部通过。
+- 35 项 npm 回归、Go race/vet 通过；15 个附件校验通过，npm 包 21,767 字节，SHA256 `914f721549ec97148217a7e848e0f19cad149c723249c8dbf0aebc03ce39c74b`，匿名 registry 下载与 Release 及 registry integrity 一致。
+- 旧个人 beta.4 CLI/Skill 实装、旧包冲突保护、失败后恢复旧版和匿名 npx 迁移公司 beta.5 通过；同版本重试及公司包 `update check` 的 `up_to_date` 通过。公司 Skill 与同 tag 一致，保留配置且未创建凭证文件。
+- 首发使用公司账号手工发布，无 OIDC provenance；Trusted Publisher 已绑定并回读确认，限定公司仓库 `publish-npm.yml` / `npm-production`。新绑定实际 OIDC 发行待下一需要发布的版本验证，不重发 beta.5。
+- [npm 流水线](https://github.com/kuaidaili/kdl-agent-cli/actions/runs/34816218128)审批后校验既有精确版本内容一致并跳过重复发布，不移动 dist-tag；该成功结果不作为公司 OIDC 实发证据。
+- 公司包 `beta` 与首次建包自动附加的 `latest` 均指向 beta.5；只推荐精确 beta 或 `@beta`。旧个人包保留，迁移弃用提示尚未设置；稳定验收与官网部署分别跟进。
 
 ## 公司发行身份
 
