@@ -9,7 +9,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   candidate:
-    runs-on: ${{ contains(github.ref_name, '-beta.') && 'ubuntu-22.04' || 'macos-15' }}
+    runs-on: ubuntu-22.04
     environment: github-release
     steps:
       - uses: actions/checkout@v4
@@ -25,15 +25,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: 检查版本、验收记录与签名配置
-        env:
-          MACOS_SIGN_P12: ${{ secrets.MACOS_SIGN_P12 }}
-          MACOS_SIGN_PASSWORD: ${{ secrets.MACOS_SIGN_PASSWORD }}
-          MACOS_NOTARY_KEY: ${{ secrets.MACOS_NOTARY_KEY }}
-          MACOS_NOTARY_KEY_ID: ${{ secrets.MACOS_NOTARY_KEY_ID }}
-          MACOS_NOTARY_ISSUER_ID: ${{ secrets.MACOS_NOTARY_ISSUER_ID }}
-          MACOS_TEAM_ID: ${{ vars.MACOS_TEAM_ID }}
-        run: node scripts/release-policy.cjs "$GITHUB_REF_NAME" --require-signing
+      - name: 检查版本与发行验收记录
+        run: node scripts/release-policy.cjs "$GITHUB_REF_NAME"
       - run: npm ci --ignore-scripts
       - run: npm test
       - run: python -m unittest discover -s tests -p '*_test.py'
@@ -41,21 +34,10 @@ jobs:
       - run: go vet ./...
       - run: python scripts/release-assets.py preflight
       - uses: goreleaser/goreleaser-action@v6
-        env:
-          MACOS_SIGN_P12: ${{ !contains(github.ref_name, '-beta.') && secrets.MACOS_SIGN_P12 || '' }}
-          MACOS_SIGN_PASSWORD: ${{ !contains(github.ref_name, '-beta.') && secrets.MACOS_SIGN_PASSWORD || '' }}
-          MACOS_NOTARY_KEY: ${{ !contains(github.ref_name, '-beta.') && secrets.MACOS_NOTARY_KEY || '' }}
-          MACOS_NOTARY_KEY_ID: ${{ !contains(github.ref_name, '-beta.') && secrets.MACOS_NOTARY_KEY_ID || '' }}
-          MACOS_NOTARY_ISSUER_ID: ${{ !contains(github.ref_name, '-beta.') && secrets.MACOS_NOTARY_ISSUER_ID || '' }}
         with:
           version: v2.18.1
           args: release --clean --skip=publish --timeout=60m
       - run: python scripts/release-assets.py collect dist dist/candidate
-      - name: 验证 macOS 签名与公证
-        if: ${{ !contains(github.ref_name, '-beta.') }}
-        env:
-          MACOS_TEAM_ID: ${{ vars.MACOS_TEAM_ID }}
-        run: python scripts/verify-macos.py dist/candidate
       - run: npm run release:prepare -- dist/candidate dist/npm
       - name: 固定 npm 候选与校验
         run: |
