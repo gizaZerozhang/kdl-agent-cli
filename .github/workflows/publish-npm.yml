@@ -17,10 +17,10 @@ jobs:
     runs-on: ubuntu-22.04
     environment: npm-production
     steps:
-      - name: 检查预发行 tag
+      - name: 检查发行 tag 格式
         env:
           RELEASE_TAG: ${{ inputs.tag }}
-        run: node -e 'if(!/^v\d+\.\d+\.\d+-beta\.\d+$/.test(process.env.RELEASE_TAG)) throw Error("稳定发行尚未开放")'
+        run: node -e 'if(!/^v\d+\.\d+\.\d+(?:-beta\.\d+)?$/.test(process.env.RELEASE_TAG)) throw Error("发行 tag 格式无效")'
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.tag }}
@@ -30,6 +30,10 @@ jobs:
           registry-url: https://registry.npmjs.org
       - run: npm install -g npm@11.5.2
       - run: npm ci --ignore-scripts
+      - name: 核对 tag 与稳定验收记录
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: node scripts/release-policy.cjs "$RELEASE_TAG"
       - name: 下载公开的固定候选
         env:
           GH_TOKEN: ${{ github.token }}

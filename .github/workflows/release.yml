@@ -1,4 +1,4 @@
-name: CLI Beta Release
+name: CLI Release
 on:
   push:
     tags: ['v*']
@@ -9,7 +9,8 @@ concurrency:
   cancel-in-progress: false
 jobs:
   candidate:
-    runs-on: ubuntu-22.04
+    runs-on: ${{ contains(github.ref_name, '-beta.') && 'ubuntu-22.04' || 'macos-15' }}
+    environment: github-release
     steps:
       - uses: actions/checkout@v4
         with:
@@ -24,25 +25,43 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: 检查 tag 与版本，稳定版暂不开放
-        run: |
-          node -e 'const p=require("./package.json"); if(process.env.GITHUB_REF_NAME!=="v"+p.version || !/^\d+\.\d+\.\d+-beta\.\d+$/.test(p.version)) throw Error("版本不一致或稳定版签名与业务验收尚未接入")'
+      - name: 检查版本、验收记录与签名配置
+        env:
+          MACOS_SIGN_P12: ${{ secrets.MACOS_SIGN_P12 }}
+          MACOS_SIGN_PASSWORD: ${{ secrets.MACOS_SIGN_PASSWORD }}
+          MACOS_NOTARY_KEY: ${{ secrets.MACOS_NOTARY_KEY }}
+          MACOS_NOTARY_KEY_ID: ${{ secrets.MACOS_NOTARY_KEY_ID }}
+          MACOS_NOTARY_ISSUER_ID: ${{ secrets.MACOS_NOTARY_ISSUER_ID }}
+          MACOS_TEAM_ID: ${{ vars.MACOS_TEAM_ID }}
+        run: node scripts/release-policy.cjs "$GITHUB_REF_NAME" --require-signing
       - run: npm ci --ignore-scripts
       - run: npm test
+      - run: python -m unittest discover -s tests -p '*_test.py'
       - run: go test -race ./...
       - run: go vet ./...
       - run: python scripts/release-assets.py preflight
       - uses: goreleaser/goreleaser-action@v6
+        env:
+          MACOS_SIGN_P12: ${{ !contains(github.ref_name, '-beta.') && secrets.MACOS_SIGN_P12 || '' }}
+          MACOS_SIGN_PASSWORD: ${{ !contains(github.ref_name, '-beta.') && secrets.MACOS_SIGN_PASSWORD || '' }}
+          MACOS_NOTARY_KEY: ${{ !contains(github.ref_name, '-beta.') && secrets.MACOS_NOTARY_KEY || '' }}
+          MACOS_NOTARY_KEY_ID: ${{ !contains(github.ref_name, '-beta.') && secrets.MACOS_NOTARY_KEY_ID || '' }}
+          MACOS_NOTARY_ISSUER_ID: ${{ !contains(github.ref_name, '-beta.') && secrets.MACOS_NOTARY_ISSUER_ID || '' }}
         with:
           version: v2.18.1
-          args: release --clean --skip=publish
+          args: release --clean --skip=publish --timeout=60m
       - run: python scripts/release-assets.py collect dist dist/candidate
+      - name: 验证 macOS 签名与公证
+        if: ${{ !contains(github.ref_name, '-beta.') }}
+        env:
+          MACOS_TEAM_ID: ${{ vars.MACOS_TEAM_ID }}
+        run: python scripts/verify-macos.py dist/candidate
       - run: npm run release:prepare -- dist/candidate dist/npm
       - name: 固定 npm 候选与校验
         run: |
           cp dist/npm/*.tgz dist/candidate/npm-package.tgz
           cd dist/candidate
-          sha256sum npm-package.tgz > NPM-SHA256
+          shasum -a 256 npm-package.tgz > NPM-SHA256
       - uses: actions/upload-artifact@v4
         with:
           name: release-candidate
@@ -95,11 +114,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          release_flags=(--prerelease)
+          if [[ "$GITHUB_REF_NAME" != *-beta.* ]]; then
+            release_flags=(--prerelease=false --latest)
+          fi
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
             gh release download "$GITHUB_REF_NAME" --dir dist/existing
             node scripts/verify-release.cjs dist/existing
           else
-            gh release create "$GITHUB_REF_NAME" dist/candidate/* --verify-tag --draft --prerelease --title "快代理 CLI $GITHUB_REF_NAME" --notes-file dist/candidate/release-notes.md
+            gh release create "$GITHUB_REF_NAME" dist/candidate/* --verify-tag --draft "${release_flags[@]}" --title "快代理 CLI $GITHUB_REF_NAME" --notes-file dist/candidate/release-notes.md
           fi
-          gh release edit "$GITHUB_REF_NAME" --draft=false --prerelease
+          gh release edit "$GITHUB_REF_NAME" --draft=false "${release_flags[@]}"
           gh workflow run publish-npm.yml --ref "$GITHUB_REF_NAME" -f tag="$GITHUB_REF_NAME"
